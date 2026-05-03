@@ -602,27 +602,39 @@ let ALL_KELAS= [];
 
 // ── LOGIN ────────────────────────────────────────
 async function doLogin() {
-  if (!db) { showErr('Konfigurasi database belum diatur. Klik ⚙ di bawah.'); return; }
-  const nisn  = document.getElementById('nisnInput').value.trim();
-  const pass  = document.getElementById('passInput').value.trim();
-  const btn   = document.getElementById('loginBtn');
+  if (!db) { showErr('Koneksi database gagal.'); return; }
+  const nisn = document.getElementById('nisnInput').value.trim();
+  const pass = document.getElementById('passInput').value.trim();
+  const btn  = document.getElementById('loginBtn');
 
   if (!nisn) { showErr('NISN tidak boleh kosong'); return; }
-  if (nisn !== pass) { showErr('Password tidak sesuai (password = NISN)'); return; }
+  if (nisn !== pass) { showErr('Password tidak sesuai — password sama dengan NISN'); return; }
 
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Memverifikasi...';
 
   try {
-    // Cari siswa berdasarkan kolom 'nis' (NISN disimpan di kolom nis di APEL JUMBO)
-    const { data, error } = await db.from('siswa')
-      .select('*')
-      .eq('nis', nisn)
-      .limit(1);
+    // Cari dengan nis exact match
+    let { data, error } = await db.from('siswa').select('*').eq('nis', nisn).limit(1);
 
-    if (error) throw new Error(error.message);
+    // Jika tidak ketemu, coba tanpa awalan nol
+    if ((!data || !data.length) && !error) {
+      const noZero = nisn.replace(/^0+/, '');
+      const res2 = await db.from('siswa').select('*').eq('nis', noZero).limit(1);
+      data  = res2.data;
+      error = res2.error;
+    }
+
+    // Jika masih tidak ketemu, coba ilike (partial match)
+    if ((!data || !data.length) && !error) {
+      const res3 = await db.from('siswa').select('*').ilike('nis', `%${nisn.replace(/^0+/,'')}%`).limit(1);
+      data  = res3.data;
+      error = res3.error;
+    }
+
+    if (error) throw new Error('Error DB: ' + error.message);
     if (!data || data.length === 0) {
-      throw new Error('NISN tidak ditemukan. Pastikan NISN sudah terdaftar di sistem.');
+      throw new Error(`NISN "${nisn}" tidak ditemukan. Pastikan NISN sesuai data di sekolah.`);
     }
 
     SISWA = data[0];
