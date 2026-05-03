@@ -663,7 +663,7 @@ function showErr(msg) {
   const el = document.getElementById('loginError');
   el.textContent = '⚠ ' + msg;
   el.style.display = 'block';
-  setTimeout(() => el.style.display = 'none', 4000);
+  setTimeout(() => el.style.display = 'none', 8000);
 }
 
 function doLogout() {
@@ -680,29 +680,51 @@ function doLogout() {
 
 // ── MASUK APP ────────────────────────────────────
 async function masukApp() {
-  document.getElementById('loginScreen').classList.remove('active');
-  document.getElementById('appScreen').classList.add('active');
+  try {
+    console.log('[masukApp] Memulai...', SISWA);
+    
+    document.getElementById('loginScreen').classList.remove('active');
+    document.getElementById('appScreen').classList.add('active');
 
-  // Isi profile banner
-  document.getElementById('pbName').textContent  = SISWA.nama || 'Siswa';
-  document.getElementById('pbNisn').textContent  = SISWA.nis  || '—';
-  document.getElementById('topbarSchool').textContent = SCHOOL_NAME;
+    // Isi profile banner
+    document.getElementById('pbName').textContent  = SISWA.nama || 'Siswa';
+    document.getElementById('pbNisn').textContent  = SISWA.nis  || '—';
+    document.getElementById('topbarSchool').textContent = SCHOOL_NAME;
+    console.log('[masukApp] Banner OK');
 
-  // Load master data
-  await loadMasterData();
-  isiKelas();
+    // Load master data dengan timeout
+    await Promise.race([
+      loadMasterData(),
+      new Promise((_,r)=>setTimeout(()=>r(new Error('loadMasterData timeout')),8000))
+    ]).catch(e => console.warn('[masukApp] loadMasterData:', e.message));
+    
+    isiKelas();
+    console.log('[masukApp] Master data OK, kelas:', KELAS_ID);
 
-  // Load semua data siswa - gunakan allSettled agar satu gagal tidak menghentikan semua
-  const results = await Promise.allSettled([
-    Promise.race([loadAbsensiRingkasan(), new Promise(r=>setTimeout(r,8000))]),
-    Promise.race([loadNilaiRingkasan(),   new Promise(r=>setTimeout(r,8000))]),
-    Promise.race([loadCatatanRingkasan(), new Promise(r=>setTimeout(r,8000))]),
-    Promise.race([loadAbsensi(),          new Promise(r=>setTimeout(r,8000))]),
-    Promise.race([loadNilai(),            new Promise(r=>setTimeout(r,8000))]),
-    Promise.race([loadCatatan(),          new Promise(r=>setTimeout(r,8000))]),
-  ]);
-  const gagal = results.filter(r=>r.status==='rejected');
-  if (gagal.length) console.warn('Beberapa data gagal dimuat:', gagal.map(r=>r.reason));
+    // Load semua data - allSettled agar satu gagal tidak menghentikan semua
+    const fns = [
+      ['AbsensiRingkasan', loadAbsensiRingkasan],
+      ['NilaiRingkasan',   loadNilaiRingkasan],
+      ['CatatanRingkasan', loadCatatanRingkasan],
+      ['Absensi',          loadAbsensi],
+      ['Nilai',            loadNilai],
+      ['Catatan',          loadCatatan],
+    ];
+
+    for (const [name, fn] of fns) {
+      try {
+        await Promise.race([fn(), new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),6000))]);
+        console.log('[masukApp]', name, 'OK');
+      } catch(e) {
+        console.warn('[masukApp]', name, 'GAGAL:', e.message);
+      }
+    }
+    
+    console.log('[masukApp] Selesai ✓');
+  } catch(e) {
+    console.error('[masukApp] ERROR:', e);
+    showErr('Gagal memuat data: ' + e.message);
+  }
 }
 
 // ── MASTER DATA ──────────────────────────────────
