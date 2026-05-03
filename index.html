@@ -586,25 +586,9 @@ let ALL_MAPEL= [];
 let ALL_KELAS= [];
 
 // ── INIT ────────────────────────────────────────
-(async function init() {
+(function init() {
   db = createClient(SUPA_URL, SUPA_KEY);
   document.getElementById('topbarSchool').textContent = SCHOOL_NAME;
-
-  // Test koneksi Supabase saat load
-  try {
-    const test = await Promise.race([
-      db.from('siswa').select('count', { count: 'exact', head: true }),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 8000))
-    ]);
-    if (test.error) {
-      showErr('DB Error: ' + test.error.message);
-    } else {
-      console.log('Supabase OK, total siswa:', test.count);
-    }
-  } catch(e) {
-    showErr('Koneksi Supabase gagal: ' + e.message + '. Cek internet Anda.');
-    console.error('Supabase init error:', e);
-  }
 
   // Cek sesi login
   const sesi = sessionStorage.getItem('apbo_siswa');
@@ -628,65 +612,47 @@ async function doLogin() {
 
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Memverifikasi...';
-  setTimeout(() => {
+  const _safetyTimer = setTimeout(() => {
     if (btn.disabled) {
       btn.disabled = false;
       btn.innerHTML = 'Masuk →';
-      showErr('Timeout 15 detik — tidak ada respons dari server');
+      showErr('Timeout — tidak dapat terhubung ke database');
     }
-  }, 15000);
+  }, 12000);
 
   try {
-    console.log('Mencoba login NISN:', nisn);
-    
-    // Test dengan timeout explicit
-    const queryPromise = db.from('siswa').select('*').eq('nis', nisn).limit(1);
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Query timeout 10s — Supabase tidak merespons')), 10000)
-    );
-    
-    const r1 = await Promise.race([queryPromise, timeoutPromise]);
-    console.log('Query result:', r1);
-    
-    let data = r1.data, error = r1.error;
+    // Cari dengan nis exact match
+    let { data, error } = await db.from('siswa').select('*').eq('nis', nisn).limit(1);
 
-    // Coba nisn jika nis tidak ada
+    // Jika tidak ketemu, coba tanpa awalan nol
     if ((!data || !data.length) && !error) {
-      const r2 = await db.from('siswa').select('*').eq('nisn', nisn).limit(1);
-      data = r2.data; error = r2.error;
-      console.log('nisn result:', r2);
+      const noZero = nisn.replace(/^0+/, '');
+      const res2 = await db.from('siswa').select('*').eq('nis', noZero).limit(1);
+      data  = res2.data;
+      error = res2.error;
     }
 
-    // Coba tanpa awalan nol
+    // Jika masih tidak ketemu, coba ilike (partial match)
     if ((!data || !data.length) && !error) {
-      const nz = nisn.replace(/^0+/, '');
-      const r3 = await db.from('siswa').select('*').eq('nis', nz).limit(1);
-      data = r3.data; error = r3.error;
-      console.log('nis_noZero result:', r3);
+      const res3 = await db.from('siswa').select('*').ilike('nis', `%${nisn.replace(/^0+/,'')}%`).limit(1);
+      data  = res3.data;
+      error = res3.error;
     }
 
-    // ilike fallback
-    if ((!data || !data.length) && !error) {
-      const nz = nisn.replace(/^0+/, '');
-      const r4 = await db.from('siswa').select('*').ilike('nis', '%'+nz+'%').limit(1);
-      data = r4.data; error = r4.error;
-      console.log('ilike result:', r4);
+    if (error) throw new Error('Error DB: ' + error.message);
+    if (!data || data.length === 0) {
+      throw new Error(`NISN "${nisn}" tidak ditemukan. Pastikan NISN sesuai data di sekolah.`);
     }
 
-    if (error) throw new Error('DB Error: ' + error.message);
-    if (!data || !data.length) {
-      // Ambil sample untuk tahu nama kolom
-      const s = await db.from('siswa').select('*').limit(1);
-      const cols = s.data?.[0] ? Object.keys(s.data[0]).join(', ') : 'kosong/error: '+(s.error?.message||'');
-      throw new Error('NISN tidak ditemukan. Kolom tabel: ' + cols);
-    }
-
+    clearTimeout(_safetyTimer);
+    btn.disabled = false;
+    btn.innerHTML = 'Masuk →';
     SISWA = data[0];
     sessionStorage.setItem('apbo_siswa', JSON.stringify(SISWA));
     masukApp();
 
   } catch(e) {
-    console.error('Login error:', e);
+    clearTimeout(_safetyTimer);
     showErr(e.message || 'Gagal login');
     btn.disabled = false;
     btn.innerHTML = 'Masuk →';
@@ -697,7 +663,7 @@ function showErr(msg) {
   const el = document.getElementById('loginError');
   el.textContent = '⚠ ' + msg;
   el.style.display = 'block';
-  setTimeout(() => el.style.display = 'none', 10000);
+  setTimeout(() => el.style.display = 'none', 4000);
 }
 
 function doLogout() {
@@ -726,15 +692,17 @@ async function masukApp() {
   await loadMasterData();
   isiKelas();
 
-  // Load semua data siswa
-  await Promise.all([
-    loadAbsensiRingkasan(),
-    loadNilaiRingkasan(),
-    loadCatatanRingkasan(),
-    loadAbsensi(),
-    loadNilai(),
-    loadCatatan()
+  // Load semua data siswa - gunakan allSettled agar satu gagal tidak menghentikan semua
+  const results = await Promise.allSettled([
+    Promise.race([loadAbsensiRingkasan(), new Promise(r=>setTimeout(r,8000))]),
+    Promise.race([loadNilaiRingkasan(),   new Promise(r=>setTimeout(r,8000))]),
+    Promise.race([loadCatatanRingkasan(), new Promise(r=>setTimeout(r,8000))]),
+    Promise.race([loadAbsensi(),          new Promise(r=>setTimeout(r,8000))]),
+    Promise.race([loadNilai(),            new Promise(r=>setTimeout(r,8000))]),
+    Promise.race([loadCatatan(),          new Promise(r=>setTimeout(r,8000))]),
   ]);
+  const gagal = results.filter(r=>r.status==='rejected');
+  if (gagal.length) console.warn('Beberapa data gagal dimuat:', gagal.map(r=>r.reason));
 }
 
 // ── MASTER DATA ──────────────────────────────────
