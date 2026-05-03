@@ -2,994 +2,1090 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>APBO Siswa — Portal Orang Tua</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>APBO Siswa</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-/* ═══════════════════════════════════════════
-   APBO SISWA — Portal Orang Tua & Siswa
-   v1.0 | Supported by D.D Candra © 2025
-═══════════════════════════════════════════ */
-:root {
-  --primary:      #1a56db;
-  --primary-dark: #1342b0;
-  --primary-light:#eff4ff;
-  --accent:       #f59e0b;
-  --accent-light: #fffbeb;
-  --success:      #10b981;
-  --success-light:#ecfdf5;
-  --danger:       #ef4444;
-  --danger-light: #fef2f2;
-  --warning:      #f59e0b;
-  --warning-light:#fffbeb;
-  --info:         #6366f1;
-  --info-light:   #eef2ff;
-  --bg:           #f1f5f9;
-  --surface:      #ffffff;
-  --border:       #e2e8f0;
-  --text:         #0f172a;
-  --text-light:   #64748b;
-  --text-muted:   #94a3b8;
-  --radius:       14px;
-  --shadow:       0 2px 16px rgba(0,0,0,.08);
-  --shadow-lg:    0 8px 40px rgba(0,0,0,.14);
+/* ══════════════════════════════════════
+   APBO SISWA v7 — Mobile-First
+   Supported by D.D Candra © 2025
+══════════════════════════════════════ */
+:root{
+  --primary:#4f46e5;--primary-d:#3730a3;--primary-l:#eef2ff;
+  --green:#10b981;--green-l:#ecfdf5;
+  --orange:#f59e0b;--orange-l:#fffbeb;
+  --red:#ef4444;--red-l:#fef2f2;
+  --blue:#3b82f6;--blue-l:#eff6ff;
+  --purple:#8b5cf6;--purple-l:#f5f3ff;
+  --bg:#f8fafc;--surface:#fff;
+  --border:#e2e8f0;--border2:#f1f5f9;
+  --text:#0f172a;--text2:#475569;--text3:#94a3b8;
+  --radius:14px;--radius-sm:9px;
+  --shadow:0 2px 12px rgba(0,0,0,.07);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.14);
+  --navbar-h:64px;
 }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+button,input,select,textarea{font-family:inherit}
+a{text-decoration:none;color:inherit}
 
-*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
-html { height:100%; }
-body {
-  font-family:'Plus Jakarta Sans',sans-serif;
-  background:var(--bg); color:var(--text);
-  min-height:100%; font-size:14px; line-height:1.6;
-  -webkit-font-smoothing:antialiased;
-}
+/* ══ SCREEN ══ */
+.screen{display:none;height:100%}
+.screen.active{display:flex;flex-direction:column;height:100%}
 
-/* ── SCREEN SYSTEM ── */
-.screen { display:none !important; min-height:100vh; }
-.screen.active { display:block !important; }
-#loginScreen.active { display:flex !important; }
+/* ══════════════════════════════
+   LOGIN
+══════════════════════════════ */
+#loginScreen{
+  background:linear-gradient(160deg,#1e1b4b 0%,#312e81 40%,#4338ca 100%);
+  align-items:center;justify-content:center;padding:20px;min-height:100vh;
+  position:relative;overflow:hidden;
+}
+.login-bg-circle{
+  position:absolute;border-radius:50%;
+  background:rgba(255,255,255,.04);pointer-events:none;
+}
+.login-bg-circle:nth-child(1){width:360px;height:360px;top:-100px;right:-100px}
+.login-bg-circle:nth-child(2){width:240px;height:240px;bottom:40px;left:-80px}
+.login-card{
+  background:rgba(255,255,255,.08);backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,.15);border-radius:24px;
+  padding:36px 28px;width:100%;max-width:380px;
+  position:relative;z-index:1;
+  animation:fadeUp .5s cubic-bezier(.23,1,.32,1);
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+.login-icon{
+  width:72px;height:72px;border-radius:20px;margin:0 auto 16px;
+  background:linear-gradient(135deg,#6366f1,#8b5cf6);
+  display:flex;align-items:center;justify-content:center;font-size:34px;
+  box-shadow:0 8px 24px rgba(99,102,241,.45);
+}
+.login-title{font-size:24px;font-weight:800;color:#fff;text-align:center;letter-spacing:-.5px}
+.login-sub{font-size:12px;color:rgba(255,255,255,.5);text-align:center;margin:4px 0 28px}
+.lbl{display:block;font-size:11px;font-weight:700;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px}
+.linput{
+  width:100%;padding:13px 16px;border-radius:12px;
+  background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.15);
+  color:#fff;font-size:15px;outline:none;transition:all .2s;
+  -webkit-appearance:none;margin-bottom:14px;
+}
+.linput::placeholder{color:rgba(255,255,255,.3);font-size:13px}
+.linput:focus{border-color:rgba(139,92,246,.8);background:rgba(255,255,255,.15);box-shadow:0 0 0 3px rgba(139,92,246,.2)}
+.lbtn{
+  width:100%;padding:14px;border-radius:12px;border:none;
+  background:linear-gradient(135deg,#6366f1,#8b5cf6);
+  color:#fff;font-size:15px;font-weight:700;cursor:pointer;
+  box-shadow:0 4px 16px rgba(99,102,241,.4);transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.lbtn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(99,102,241,.5)}
+.lbtn:active{transform:translateY(0)}
+.lbtn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.lerr{
+  background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);
+  border-radius:10px;padding:10px 14px;color:#fca5a5;
+  font-size:12px;font-weight:600;text-align:center;
+  margin-bottom:14px;display:none;
+}
+.login-hint{text-align:center;font-size:11px;color:rgba(255,255,255,.35);margin-top:18px;line-height:1.8}
+.login-wm{text-align:center;font-size:10px;color:rgba(255,255,255,.2);margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08)}
+.spinner{width:18px;height:18px;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-/* ════════════════════════════════
-   LOGIN SCREEN
-════════════════════════════════ */
-#loginScreen {
-  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #1a56db 100%);
-  display:flex; align-items:center; justify-content:center;
-  padding:24px; min-height:100vh; position:relative; overflow:hidden;
-}
-#loginScreen::before {
-  content:''; position:absolute; inset:0;
-  background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(99,102,241,.3) 0%, transparent 70%);
-  pointer-events:none;
-}
-.login-orbs {
-  position:absolute; inset:0; pointer-events:none; overflow:hidden;
-}
-.orb {
-  position:absolute; border-radius:50%;
-  background:rgba(255,255,255,.04);
-  animation:float 8s ease-in-out infinite;
-}
-.orb:nth-child(1){width:320px;height:320px;top:-80px;right:-80px;animation-delay:0s}
-.orb:nth-child(2){width:200px;height:200px;bottom:60px;left:-60px;animation-delay:3s}
-.orb:nth-child(3){width:120px;height:120px;top:40%;left:10%;animation-delay:5s}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)}}
-
-.login-box {
-  background:rgba(255,255,255,.07); backdrop-filter:blur(24px);
-  border:1px solid rgba(255,255,255,.15);
-  border-radius:24px; padding:40px 36px;
-  width:100%; max-width:400px;
-  box-shadow: 0 32px 80px rgba(0,0,0,.4);
-  position:relative; z-index:1;
-  animation:slideUp .5s cubic-bezier(.23,1,.32,1);
-}
-@keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
-
-.login-logo {
-  text-align:center; margin-bottom:28px;
-}
-.login-logo-icon {
-  width:72px; height:72px; border-radius:20px;
-  background:linear-gradient(135deg,#3b82f6,#6366f1);
-  margin:0 auto 12px; display:flex; align-items:center;
-  justify-content:center; font-size:32px;
-  box-shadow:0 8px 24px rgba(99,102,241,.4);
-}
-.login-appname {
-  font-size:22px; font-weight:800; color:#fff; letter-spacing:-.5px;
-}
-.login-tagline {
-  font-size:12px; color:rgba(255,255,255,.5); margin-top:4px;
-}
-
-.login-form-group { margin-bottom:16px; }
-.login-label {
-  display:block; font-size:11px; font-weight:700;
-  color:rgba(255,255,255,.6); text-transform:uppercase;
-  letter-spacing:.8px; margin-bottom:8px;
-}
-.login-input {
-  width:100%; padding:13px 16px;
-  background:rgba(255,255,255,.1); border:1.5px solid rgba(255,255,255,.15);
-  border-radius:12px; color:#fff; font-size:15px;
-  font-family:'DM Mono',monospace; letter-spacing:2px;
-  outline:none; transition:all .2s;
-  -webkit-appearance:none;
-}
-.login-input::placeholder { color:rgba(255,255,255,.3); letter-spacing:0; font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; }
-.login-input:focus { border-color:rgba(99,102,241,.8); background:rgba(255,255,255,.15); box-shadow:0 0 0 3px rgba(99,102,241,.2); }
-
-.login-btn {
-  width:100%; padding:14px; border-radius:12px; border:none;
-  background:linear-gradient(135deg,#3b82f6,#6366f1);
-  color:#fff; font-size:15px; font-weight:700;
-  cursor:pointer; margin-top:8px;
-  font-family:'Plus Jakarta Sans',sans-serif;
-  transition:all .2s; box-shadow:0 4px 16px rgba(99,102,241,.4);
-}
-.login-btn:hover { transform:translateY(-1px); box-shadow:0 8px 24px rgba(99,102,241,.5); }
-.login-btn:active { transform:translateY(0); }
-.login-btn:disabled { opacity:.6; cursor:not-allowed; transform:none; }
-
-.login-hint {
-  text-align:center; font-size:12px;
-  color:rgba(255,255,255,.35); margin-top:20px; line-height:1.7;
-}
-.login-error {
-  background:rgba(239,68,68,.15); border:1px solid rgba(239,68,68,.3);
-  border-radius:10px; padding:10px 14px;
-  color:#fca5a5; font-size:12px; font-weight:600;
-  margin-bottom:14px; text-align:center; display:none;
-}
-
-/* ════════════════════════════════
-   APP LAYOUT
-════════════════════════════════ */
-#appScreen { background:var(--bg); }
+/* ══════════════════════════════
+   APP SHELL
+══════════════════════════════ */
+#appScreen{background:var(--bg)}
 
 /* TOPBAR */
-.topbar {
-  background:var(--surface); border-bottom:1px solid var(--border);
-  padding:0 20px; height:60px;
-  display:flex; align-items:center; justify-content:space-between;
-  position:sticky; top:0; z-index:100;
-  box-shadow:0 2px 12px rgba(0,0,0,.06);
+.topbar{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:0 16px;height:56px;display:flex;align-items:center;
+  justify-content:space-between;position:sticky;top:0;z-index:200;
+  flex-shrink:0;box-shadow:0 1px 8px rgba(0,0,0,.06);
 }
-.topbar-left { display:flex; align-items:center; gap:10px; }
-.topbar-logo {
-  width:36px; height:36px; border-radius:9px;
-  background:linear-gradient(135deg,#3b82f6,#6366f1);
-  display:flex; align-items:center; justify-content:center;
-  font-size:18px; flex-shrink:0;
+.tb-left{display:flex;align-items:center;gap:10px}
+.tb-logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.tb-app{font-size:15px;font-weight:800;color:var(--text)}
+.tb-school{font-size:10px;color:var(--text3);margin-top:1px}
+.tb-right{display:flex;align-items:center;gap:8px}
+
+/* BELL */
+.bell-btn{
+  position:relative;width:36px;height:36px;border-radius:10px;
+  background:var(--bg);border:1.5px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;cursor:pointer;transition:all .18s;
 }
-.topbar-title { font-size:16px; font-weight:800; color:var(--text); }
-.topbar-subtitle { font-size:11px; color:var(--text-light); margin-top:1px; }
-.topbar-logout {
-  padding:7px 14px; border-radius:9px; border:1.5px solid var(--border);
-  background:var(--surface); font-size:12px; font-weight:600;
-  color:var(--danger); cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif;
-  transition:all .18s; display:flex; align-items:center; gap:5px;
+.bell-btn:hover{background:var(--primary-l);border-color:var(--primary)}
+.bell-dot{
+  position:absolute;top:4px;right:4px;width:9px;height:9px;
+  border-radius:50%;background:var(--red);border:2px solid var(--surface);
+  display:none;animation:pulse 1.5s infinite;
 }
-.topbar-logout:hover { background:var(--danger-light); border-color:var(--danger); }
+.bell-dot.show{display:block}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.3)}}
+
+.logout-btn{
+  padding:7px 12px;border-radius:9px;border:1.5px solid var(--border);
+  background:var(--surface);font-size:12px;font-weight:600;
+  color:var(--red);cursor:pointer;transition:all .18s;
+  display:flex;align-items:center;gap:4px;
+}
+.logout-btn:hover{background:var(--red-l);border-color:var(--red)}
 
 /* PROFILE BANNER */
-.profile-banner {
-  background:linear-gradient(135deg, #1e3a8a 0%, #1a56db 100%);
-  padding:20px; margin:16px 16px 0;
-  border-radius:var(--radius); color:#fff;
-  position:relative; overflow:hidden;
+.profile-banner{
+  background:linear-gradient(135deg,#1e1b4b,#4338ca);
+  padding:18px 16px;margin:12px;border-radius:18px;color:#fff;
+  position:relative;overflow:hidden;flex-shrink:0;
 }
-.profile-banner::after {
-  content:''; position:absolute; right:-20px; top:-20px;
-  width:120px; height:120px; border-radius:50%;
-  background:rgba(255,255,255,.06);
-}
-.profile-banner::before {
-  content:''; position:absolute; right:40px; bottom:-30px;
-  width:80px; height:80px; border-radius:50%;
-  background:rgba(255,255,255,.04);
-}
-.pb-name  { font-size:18px; font-weight:800; letter-spacing:-.3px; }
-.pb-meta  { font-size:12px; opacity:.75; margin-top:4px; display:flex; gap:14px; flex-wrap:wrap; }
-.pb-badge {
-  display:inline-flex; align-items:center; gap:4px;
-  background:rgba(255,255,255,.15); border-radius:99px;
-  padding:3px 10px; font-size:11px; font-weight:600;
-}
+.pb-deco{position:absolute;border-radius:50%;background:rgba(255,255,255,.06)}
+.pb-deco:nth-child(1){width:120px;height:120px;right:-20px;top:-30px}
+.pb-deco:nth-child(2){width:70px;height:70px;right:60px;bottom:-20px}
+.pb-name{font-size:17px;font-weight:800;position:relative;z-index:1;letter-spacing:-.3px}
+.pb-chips{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;position:relative;z-index:1}
+.pb-chip{background:rgba(255,255,255,.15);border-radius:99px;padding:3px 10px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px}
 
-/* NAV TABS */
-.nav-tabs {
-  display:flex; overflow-x:auto; gap:4px;
-  padding:12px 16px 0; border-bottom:2px solid var(--border);
-  background:var(--surface); margin-top:16px;
-  -webkit-overflow-scrolling:touch; scrollbar-width:none;
-}
-.nav-tabs::-webkit-scrollbar { display:none; }
-.nav-tab {
-  padding:9px 16px; border-radius:9px 9px 0 0;
-  font-size:13px; font-weight:600; cursor:pointer;
-  white-space:nowrap; color:var(--text-light);
-  border:none; background:transparent;
-  font-family:'Plus Jakarta Sans',sans-serif;
-  transition:all .18s; border-bottom:3px solid transparent;
-  margin-bottom:-2px; flex-shrink:0;
-  display:flex; align-items:center; gap:6px;
-}
-.nav-tab:hover { color:var(--primary); background:var(--primary-light); }
-.nav-tab.active { color:var(--primary); border-bottom-color:var(--primary); background:var(--primary-light); }
+/* SCROLL CONTENT */
+.app-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--navbar-h) + 12px)}
 
-/* CONTENT */
-.content { padding:16px; max-width:900px; margin:0 auto; padding-bottom:80px; }
+/* BOTTOM NAV */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;height:var(--navbar-h);
+  background:var(--surface);border-top:1px solid var(--border);
+  display:flex;align-items:center;padding:0 4px;
+  box-shadow:0 -4px 20px rgba(0,0,0,.08);z-index:200;
+}
+.bn-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;padding:6px 0;cursor:pointer;border-radius:12px;
+  transition:all .18s;color:var(--text3);position:relative;
+}
+.bn-item:hover{background:var(--bg)}
+.bn-item.active{color:var(--primary)}
+.bn-icon{font-size:22px;line-height:1;position:relative}
+.bn-label{font-size:9px;font-weight:700;letter-spacing:.2px}
+.bn-badge{
+  position:absolute;top:-2px;right:-4px;min-width:16px;height:16px;
+  background:var(--red);border-radius:99px;color:#fff;
+  font-size:9px;font-weight:800;display:flex;align-items:center;
+  justify-content:center;padding:0 4px;border:2px solid var(--surface);
+  display:none;
+}
+.bn-badge.show{display:flex}
 
-/* SECTION */
-.section { display:none; }
-.section.active { display:block; }
+/* ══ PAGE SECTIONS ══ */
+.page-sec{display:none}
+.page-sec.active{display:block}
 
-/* CARDS */
-.card {
-  background:var(--surface); border-radius:var(--radius);
-  border:1px solid var(--border); padding:18px;
-  box-shadow:var(--shadow); margin-bottom:12px;
-}
-.card-header {
-  font-size:12px; font-weight:700; color:var(--text-light);
-  text-transform:uppercase; letter-spacing:.6px;
-  margin-bottom:14px; display:flex; align-items:center;
-  justify-content:space-between; gap:8px;
-}
-.card-header span { font-size:16px; }
+/* ══ CARDS ══ */
+.card{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}
+.card-title{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.card-title .ico{font-size:15px}
 
-/* STAT GRID */
-.stat-grid {
-  display:grid; grid-template-columns:repeat(2,1fr); gap:10px;
-  margin-bottom:12px;
-}
-.stat-card {
-  background:var(--surface); border-radius:12px;
-  border:1px solid var(--border); padding:14px;
-  text-align:center;
-}
-.stat-val { font-size:28px; font-weight:800; line-height:1; }
-.stat-lbl { font-size:11px; color:var(--text-light); margin-top:4px; font-weight:600; }
+/* ══ STAT BOXES ══ */
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.stat-box{border-radius:12px;padding:12px 8px;text-align:center}
+.stat-val{font-size:26px;font-weight:800;line-height:1}
+.stat-lbl{font-size:10px;font-weight:700;margin-top:3px}
 
-/* BADGE */
-.badge {
-  display:inline-flex; align-items:center; padding:3px 9px;
-  border-radius:99px; font-size:11px; font-weight:700;
-}
-.badge-hadir   { background:var(--success-light); color:var(--success); }
-.badge-sakit   { background:#fffbeb; color:#d97706; }
-.badge-izin    { background:var(--info-light); color:var(--info); }
-.badge-alpha   { background:var(--danger-light); color:var(--danger); }
-.badge-mapel   { background:var(--primary-light); color:var(--primary); }
-.badge-warning { background:var(--warning-light); color:var(--warning); }
-.badge-danger  { background:var(--danger-light); color:var(--danger); }
-.badge-info    { background:var(--info-light); color:var(--info); }
+/* ══ BADGES ══ */
+.badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:99px;font-size:11px;font-weight:700}
+.b-h{background:var(--green-l);color:var(--green)}
+.b-s{background:var(--orange-l);color:var(--orange)}
+.b-i{background:var(--blue-l);color:var(--blue)}
+.b-a{background:var(--red-l);color:var(--red)}
+.b-p{background:var(--purple-l);color:var(--purple)}
 
-/* TABLE */
-.tbl-wrap { overflow-x:auto; border-radius:10px; border:1px solid var(--border); }
-table { width:100%; border-collapse:collapse; font-size:12px; min-width:380px; }
-thead th {
-  background:#f8fafc; padding:10px 12px; text-align:left;
-  font-size:10px; font-weight:700; color:var(--text-light);
-  text-transform:uppercase; letter-spacing:.5px;
-  border-bottom:1px solid var(--border);
-}
-tbody td {
-  padding:11px 12px; border-bottom:1px solid #f1f5f9;
-  vertical-align:middle;
-}
-tbody tr:last-child td { border-bottom:none; }
-tbody tr:hover td { background:#f8fafc; }
+/* ══ TABLE ══ */
+.tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:320px}
+thead th{background:#f8fafc;padding:10px 12px;text-align:left;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;border-bottom:1px solid var(--border)}
+tbody td{padding:10px 12px;border-bottom:1px solid var(--border2);vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
 
-/* NILAI TABLE */
-.nilai-score {
-  display:inline-flex; align-items:center; justify-content:center;
-  width:40px; height:28px; border-radius:7px;
-  font-size:12px; font-weight:700;
-}
-.score-good  { background:var(--success-light); color:var(--success); }
-.score-mid   { background:var(--warning-light); color:var(--warning); }
-.score-bad   { background:var(--danger-light); color:var(--danger); }
-.score-empty { background:#f1f5f9; color:var(--text-muted); }
+/* NILAI CHIP */
+.ns{display:inline-flex;align-items:center;justify-content:center;width:36px;height:26px;border-radius:7px;font-size:12px;font-weight:700}
+.ng{background:var(--green-l);color:var(--green)}
+.nm{background:var(--orange-l);color:var(--orange)}
+.nb{background:var(--red-l);color:var(--red)}
+.ne{background:var(--bg);color:var(--text3)}
 
-/* CATATAN ITEM */
-.catatan-item {
-  background:var(--surface); border-radius:12px;
-  border-left:4px solid var(--warning);
-  padding:14px 16px; margin-bottom:10px;
-  box-shadow:0 1px 6px rgba(0,0,0,.04);
-}
-.catatan-item.kat-kenakalan { border-left-color:var(--danger); }
-.catatan-item.kat-prestasi  { border-left-color:var(--success); }
-.catatan-meta {
-  display:flex; align-items:center; gap:8px;
-  flex-wrap:wrap; margin-bottom:8px;
-}
-.catatan-tanggal { font-size:11px; color:var(--text-light); font-weight:600; }
-.catatan-masalah { font-size:13px; font-weight:600; margin-bottom:4px; }
-.catatan-solusi  { font-size:12px; color:var(--text-light); }
-
-/* REKAP ABSENSI BAR */
-.absen-summary {
-  display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px;
-}
-.absen-sum-item {
-  padding:10px 8px; border-radius:10px; text-align:center;
-}
-.absen-sum-val { font-size:22px; font-weight:800; }
-.absen-sum-lbl { font-size:10px; font-weight:700; margin-top:2px; }
-
-/* EMPTY */
-.empty {
-  text-align:center; padding:40px 20px;
-  color:var(--text-muted);
-}
-.empty-icon { font-size:40px; margin-bottom:10px; }
-.empty h3   { font-size:15px; font-weight:700; color:var(--text-light); }
-.empty p    { font-size:12px; margin-top:4px; }
+/* CATATAN */
+.cat-item{border-left:4px solid var(--orange);background:var(--surface);border-radius:0 12px 12px 0;padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,.04)}
+.cat-item.kat-k{border-left-color:var(--red)}
+.cat-item.kat-p{border-left-color:var(--green)}
+.cat-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.cat-tgl{font-size:11px;color:var(--text3);font-weight:600}
+.cat-judul{font-size:13px;font-weight:700;margin-bottom:3px}
+.cat-isi{font-size:12px;color:var(--text2)}
 
 /* FILTER */
-.filter-row {
-  display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;
-}
-.filter-select {
-  padding:8px 12px; border-radius:9px; border:1.5px solid var(--border);
-  font-size:12px; font-family:'Plus Jakarta Sans',sans-serif;
-  background:var(--surface); color:var(--text);
-  outline:none; cursor:pointer; flex:1; min-width:120px;
-}
-.filter-select:focus { border-color:var(--primary); }
+.fselect{padding:8px 12px;border-radius:9px;border:1.5px solid var(--border);font-size:12px;background:var(--surface);color:var(--text);outline:none;width:100%;-webkit-appearance:none}
+.fselect:focus{border-color:var(--primary)}
 
-/* LOADING */
-.spinner {
-  display:inline-block; width:20px; height:20px;
-  border:2.5px solid rgba(255,255,255,.3);
-  border-top-color:#fff; border-radius:50%;
-  animation:spin .6s linear infinite;
-}
-@keyframes spin{to{transform:rotate(360deg)}}
-.page-loading {
-  text-align:center; padding:60px 20px;
-}
-.page-loading .sp {
-  width:36px; height:36px; border:3px solid var(--border);
-  border-top-color:var(--primary); border-radius:50%;
-  animation:spin .7s linear infinite;
-  margin:0 auto 12px;
-}
+/* PDF BUTTON */
+.pdf-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:9px;border:none;background:#dc2626;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .18s}
+.pdf-btn:hover{background:#b91c1c;transform:translateY(-1px)}
 
-/* TOAST */
-#toast {
-  position:fixed; bottom:24px; left:50%;
-  transform:translateX(-50%) translateY(60px);
-  background:#0f172a; color:#fff; padding:10px 20px;
-  border-radius:99px; font-size:13px; font-weight:600;
-  z-index:9999; transition:transform .3s;
-  pointer-events:none; white-space:nowrap;
-  box-shadow:0 8px 32px rgba(0,0,0,.3);
-}
-#toast.show { transform:translateX(-50%) translateY(0); }
-#toast.err  { background:var(--danger); }
+/* ══ NOTIF PANEL ══ */
+.notif-overlay{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.4);display:none;align-items:flex-start;justify-content:flex-end;padding:60px 12px 0}
+.notif-overlay.open{display:flex}
+.notif-panel{background:var(--surface);border-radius:18px;width:100%;max-width:340px;max-height:70vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);animation:slideDown .25s ease}
+@keyframes slideDown{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
+.notif-head{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.notif-head h3{font-size:15px;font-weight:700}
+.notif-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text3)}
+.notif-scroll{flex:1;overflow-y:auto;padding:12px}
+.notif-item{padding:12px;border-radius:12px;margin-bottom:8px;cursor:pointer;transition:all .18s;border:1px solid var(--border)}
+.notif-item:hover{background:var(--bg)}
+.notif-item.unread{background:var(--primary-l);border-color:#c7d2fe}
+.notif-item-title{font-size:13px;font-weight:700;margin-bottom:3px}
+.notif-item-body{font-size:11px;color:var(--text2);line-height:1.5}
+.notif-item-time{font-size:10px;color:var(--text3);margin-top:5px}
+.notif-empty{text-align:center;padding:30px;color:var(--text3);font-size:13px}
+
+/* ══ CHAT ══ */
+#chatLayer { display:none; }
+#chatLayer.active { display:flex; }
+.chat-header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.chat-header h3{font-size:15px;font-weight:700}
+.chat-header p{font-size:11px;color:var(--text3);margin-top:2px}
+.chat-msgs{flex:1;overflow-y:auto;padding:12px 12px 8px;-webkit-overflow-scrolling:touch;background:var(--bg)}
+.chat-day{text-align:center;margin:10px 0;font-size:11px;color:var(--text3);font-weight:600;position:relative}
+.chat-day::before,.chat-day::after{content:'';position:absolute;top:50%;width:30%;height:1px;background:var(--border)}
+.chat-day::before{left:0}.chat-day::after{right:0}
+
+/* BUBBLE */
+.bubble-wrap{display:flex;margin-bottom:10px;gap:8px;align-items:flex-end}
+.bubble-wrap.me{flex-direction:row-reverse}
+.bubble-avatar{width:30px;height:30px;border-radius:50%;background:var(--primary-l);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--primary);flex-shrink:0}
+.bubble{max-width:75%;padding:10px 13px;border-radius:18px;font-size:13px;line-height:1.5;position:relative;word-break:break-word}
+.bubble-wrap.me .bubble{background:var(--primary);color:#fff;border-radius:18px 18px 4px 18px}
+.bubble-wrap.other .bubble{background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:18px 18px 18px 4px}
+.bubble-meta{font-size:10px;margin-top:4px;opacity:.7;display:flex;align-items:center;gap:4px}
+.bubble-name{font-size:10px;font-weight:700;margin-bottom:3px;color:var(--text3)}
+
+/* FILE ATTACHMENT */
+.attach-box{background:rgba(255,255,255,.15);border-radius:10px;padding:8px 10px;margin-top:6px;display:flex;align-items:center;gap:8px;cursor:pointer}
+.bubble-wrap.other .attach-box{background:var(--bg);border:1px solid var(--border)}
+.attach-icon{font-size:20px;flex-shrink:0}
+.attach-name{font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px}
+.attach-size{font-size:10px;opacity:.7}
+.attach-dl{font-size:18px;flex-shrink:0;opacity:.8}
+
+/* CHAT INPUT */
+.chat-input-bar{background:var(--surface);border-top:1px solid var(--border);padding:8px 12px;flex-shrink:0;padding-bottom:max(8px,env(safe-area-inset-bottom))}
+.chat-input-row{display:flex;align-items:flex-end;gap:8px}
+.chat-attach-btn{width:38px;height:38px;border-radius:10px;background:var(--bg);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;flex-shrink:0;transition:all .18s}
+.chat-attach-btn:hover{background:var(--primary-l);border-color:var(--primary)}
+.chat-tinput{flex:1;padding:9px 14px;border-radius:22px;border:1.5px solid var(--border);font-size:13px;outline:none;resize:none;max-height:100px;line-height:1.5;transition:all .2s;background:var(--bg)}
+.chat-tinput:focus{border-color:var(--primary);background:var(--surface)}
+.chat-send-btn{width:38px;height:38px;border-radius:50%;background:var(--primary);border:none;color:#fff;font-size:18px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .18s}
+.chat-send-btn:hover{background:var(--primary-d);transform:scale(1.05)}
+.file-preview-bar{display:none;padding:8px 12px;border-top:1px solid var(--border);background:var(--bg);flex-wrap:wrap;gap:8px}
+.file-preview-bar.show{display:flex}
+.file-chip{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:11px;font-weight:600}
+.file-chip-rm{background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:0;line-height:1}
+
+/* ══ LOADING ══ */
+.load-spin{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite;margin:30px auto;display:block}
+
+/* ══ EMPTY ══ */
+.empty{text-align:center;padding:36px 20px;color:var(--text3)}
+.empty .ei{font-size:40px;margin-bottom:10px}
+.empty h3{font-size:14px;font-weight:700;color:var(--text2);margin-bottom:4px}
+.empty p{font-size:12px}
 
 /* WATERMARK */
-.watermark {
-  text-align:center; font-size:10px; color:var(--text-muted);
-  padding:20px 16px 30px; letter-spacing:.3px;
-}
+.wm{text-align:center;font-size:10px;color:var(--text3);padding:16px;letter-spacing:.3px}
 
-/* SCROLL NAV indicator */
-.scroll-hint {
-  display:none; font-size:10px; color:var(--text-muted);
-  text-align:right; padding:2px 16px;
-}
-@media(max-width:600px) {
-  .scroll-hint { display:block; }
-  .stat-grid { grid-template-columns:repeat(2,1fr); }
-  .profile-banner { padding:16px; }
-  .pb-name { font-size:16px; }
+@media(min-width:600px){
+  .bottom-nav{max-width:480px;left:50%;transform:translateX(-50%);border-radius:20px 20px 0 0;border-left:1px solid var(--border);border-right:1px solid var(--border)}
+  #appScreen{max-width:480px;margin:0 auto;box-shadow:0 0 40px rgba(0,0,0,.1)}
 }
 </style>
 </head>
 <body>
-<div id="toast"></div>
+<div id="toast" style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(40px);background:#0f172a;color:#fff;padding:10px 20px;border-radius:99px;font-size:13px;font-weight:600;z-index:9999;transition:all .3s;pointer-events:none;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,.3);opacity:0"></div>
 
-<!-- ═══════════ LOGIN SCREEN ═══════════ -->
-<div id="loginScreen" class="screen active">
-  <div class="login-orbs">
-    <div class="orb"></div><div class="orb"></div><div class="orb"></div>
-  </div>
-  <div class="login-box">
-    <div class="login-logo">
-      <div class="login-logo-icon">📚</div>
-      <div class="login-appname">APBO Siswa</div>
-      <div class="login-tagline">Portal Informasi Orang Tua & Siswa</div>
-    </div>
-
-    <div class="login-error" id="loginError"></div>
-
-    <div class="login-form-group">
-      <label class="login-label">NISN Siswa</label>
-      <input type="text" id="nisnInput" class="login-input"
-             placeholder="Masukkan NISN siswa"
-             inputmode="numeric" pattern="[0-9]*" maxlength="20"
-             onkeydown="if(event.key==='Enter')doLogin()">
-    </div>
-    <div class="login-form-group">
-      <label class="login-label">Password (NISN)</label>
-      <input type="password" id="passInput" class="login-input"
-             placeholder="Sama dengan NISN"
-             inputmode="numeric" pattern="[0-9]*" maxlength="20"
-             onkeydown="if(event.key==='Enter')doLogin()">
-    </div>
-    <button class="login-btn" id="loginBtn" onclick="doLogin()">
-      Masuk →
-    </button>
-    <div class="login-hint">
-      Gunakan <strong>NISN</strong> sebagai username <em>dan</em> password<br>
-      Hubungi guru/wali kelas jika lupa NISN
-    </div>
-
-    <div style="text-align:center;margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,.08)">
-      <div style="font-size:10px;color:rgba(255,255,255,.25);letter-spacing:.3px">
-        Supported by D.D Candra © 2025
-      </div>
-    </div>
+<!-- ═══════ LOGIN ═══════ -->
+<div id="loginScreen" class="screen active" style="display:flex">
+  <div class="login-bg-circle"></div>
+  <div class="login-bg-circle"></div>
+  <div class="login-card">
+    <div class="login-icon">📚</div>
+    <div class="login-title">APBO Siswa</div>
+    <div class="login-sub">Portal Informasi Orang Tua & Siswa</div>
+    <div class="lerr" id="loginErr"></div>
+    <label class="lbl">NISN Siswa</label>
+    <input type="text" id="nisnInput" class="linput" placeholder="Masukkan NISN siswa" inputmode="numeric" maxlength="20" onkeydown="if(event.key==='Enter')doLogin()">
+    <label class="lbl">Password (NISN)</label>
+    <input type="password" id="passInput" class="linput" placeholder="Sama dengan NISN" inputmode="numeric" maxlength="20" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="lbtn" id="loginBtn" onclick="doLogin()">Masuk →</button>
+    <div class="login-hint">Gunakan <strong>NISN</strong> sebagai username <em>dan</em> password<br>Hubungi guru/wali kelas jika lupa NISN</div>
+    <div class="login-wm">Supported by D.D Candra © 2025</div>
   </div>
 </div>
 
-<!-- ═══════════ APP SCREEN ═══════════ -->
+<!-- ═══════ APP ═══════ -->
 <div id="appScreen" class="screen">
+
   <!-- Topbar -->
   <div class="topbar">
-    <div class="topbar-left">
-      <div class="topbar-logo">📚</div>
+    <div class="tb-left">
+      <div class="tb-logo">📚</div>
       <div>
-        <div class="topbar-title">APBO Siswa</div>
-        <div class="topbar-subtitle" id="topbarSchool">Portal Orang Tua</div>
+        <div class="tb-app">APBO Siswa</div>
+        <div class="tb-school" id="tbSchool">SMP Negeri 6 Sampang</div>
       </div>
     </div>
-    <button class="topbar-logout" onclick="doLogout()">🚪 Keluar</button>
-  </div>
-
-  <!-- Profile Banner -->
-  <div class="profile-banner">
-    <div class="pb-name" id="pbName">—</div>
-    <div class="pb-meta">
-      <span class="pb-badge">🏫 <span id="pbKelas">—</span></span>
-      <span class="pb-badge">🪪 NISN: <span id="pbNisn">—</span></span>
+    <div class="tb-right">
+      <div class="bell-btn" onclick="toggleNotif()" id="bellBtn">
+        🔔<div class="bell-dot" id="bellDot"></div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">🚪</button>
     </div>
   </div>
 
-  <!-- Nav Tabs -->
-  <div class="scroll-hint">← geser untuk tab lainnya →</div>
-  <div class="nav-tabs" id="navTabs">
-    <button class="nav-tab active" onclick="switchTab('ringkasan')">📊 Ringkasan</button>
-    <button class="nav-tab" onclick="switchTab('absensi')">📅 Absensi</button>
-    <button class="nav-tab" onclick="switchTab('nilai')">📝 Nilai</button>
-    <button class="nav-tab" onclick="switchTab('catatan')">📋 Catatan</button>
+  <!-- Notif Panel -->
+  <div class="notif-overlay" id="notifOverlay" onclick="closeNotif(event)">
+    <div class="notif-panel">
+      <div class="notif-head">
+        <h3>🔔 Notifikasi</h3>
+        <button class="notif-close" onclick="closeNotifPanel()">✕</button>
+      </div>
+      <div class="notif-scroll" id="notifList">
+        <div class="notif-empty">Tidak ada notifikasi</div>
+      </div>
+    </div>
   </div>
 
-  <!-- Content -->
-  <div class="content">
+  <!-- Scroll Area -->
+  <div class="app-scroll" id="appScroll">
+
+    <!-- Profile Banner -->
+    <div class="profile-banner">
+      <div class="pb-deco"></div><div class="pb-deco"></div>
+      <div class="pb-name" id="pbName">—</div>
+      <div class="pb-chips">
+        <div class="pb-chip">🏫 <span id="pbKelas">—</span></div>
+        <div class="pb-chip">🪪 <span id="pbNisn">—</span></div>
+      </div>
+    </div>
 
     <!-- ── RINGKASAN ── -->
-    <div id="sec-ringkasan" class="section active">
+    <div id="sec-home" class="page-sec active" style="padding:0 12px">
       <div class="card">
-        <div class="card-header"><span>📊</span> Rekap Kehadiran (Semua Bulan)</div>
-        <div class="absen-summary" id="absenSummary">
-          <div class="absen-sum-item" style="background:var(--success-light)">
-            <div class="absen-sum-val" style="color:var(--success)" id="sumH">—</div>
-            <div class="absen-sum-lbl" style="color:var(--success)">Hadir</div>
-          </div>
-          <div class="absen-sum-item" style="background:#fffbeb">
-            <div class="absen-sum-val" style="color:#d97706" id="sumS">—</div>
-            <div class="absen-sum-lbl" style="color:#d97706">Sakit</div>
-          </div>
-          <div class="absen-sum-item" style="background:var(--info-light)">
-            <div class="absen-sum-val" style="color:var(--info)" id="sumI">—</div>
-            <div class="absen-sum-lbl" style="color:var(--info)">Izin</div>
-          </div>
-          <div class="absen-sum-item" style="background:var(--danger-light)">
-            <div class="absen-sum-val" style="color:var(--danger)" id="sumA">—</div>
-            <div class="absen-sum-lbl" style="color:var(--danger)">Alpha</div>
-          </div>
+        <div class="card-title"><span>📊 Rekap Kehadiran</span>
+          <button class="pdf-btn" onclick="pdfAbsensi()">📥 PDF</button>
+        </div>
+        <div class="stat-row">
+          <div class="stat-box" style="background:var(--green-l)"><div class="stat-val" style="color:var(--green)" id="sumH">—</div><div class="stat-lbl" style="color:var(--green)">Hadir</div></div>
+          <div class="stat-box" style="background:var(--orange-l)"><div class="stat-val" style="color:var(--orange)" id="sumS">—</div><div class="stat-lbl" style="color:var(--orange)">Sakit</div></div>
+          <div class="stat-box" style="background:var(--blue-l)"><div class="stat-val" style="color:var(--blue)" id="sumI">—</div><div class="stat-lbl" style="color:var(--blue)">Izin</div></div>
+          <div class="stat-box" style="background:var(--red-l)"><div class="stat-val" style="color:var(--red)" id="sumA">—</div><div class="stat-lbl" style="color:var(--red)">Alpha</div></div>
         </div>
       </div>
-
       <div class="card">
-        <div class="card-header"><span>📝</span> Rata-rata Nilai per Mapel</div>
-        <div id="nilaiRingkasan">
-          <div class="page-loading"><div class="sp"></div><p>Memuat nilai...</p></div>
+        <div class="card-title"><span>📝 Nilai per Mapel</span>
+          <button class="pdf-btn" onclick="pdfNilai()">📥 PDF</button>
         </div>
+        <div id="nilaiRingkasan"><div class="load-spin"></div></div>
       </div>
-
-      <div class="card" id="catatanRingkasanCard">
-        <div class="card-header"><span>⚠️</span> Catatan Terbaru</div>
-        <div id="catatanRingkasan">
-          <div class="page-loading"><div class="sp"></div></div>
-        </div>
+      <div class="card">
+        <div class="card-title"><span>⚠️ Catatan Terbaru</span></div>
+        <div id="catatanRingkasan"><div class="load-spin"></div></div>
       </div>
+      <div class="wm">Supported by D.D Candra © 2025</div>
     </div>
 
     <!-- ── ABSENSI ── -->
-    <div id="sec-absensi" class="section">
+    <div id="sec-absensi" class="page-sec" style="padding:0 12px">
       <div class="card">
-        <div class="card-header"><span>📅</span> Riwayat Absensi</div>
-        <div class="filter-row">
-          <select class="filter-select" id="filterAbsenBulan" onchange="loadAbsensi()">
-            <option value="">Semua Bulan</option>
-            <option value="01">Januari</option><option value="02">Februari</option>
-            <option value="03">Maret</option><option value="04">April</option>
-            <option value="05">Mei</option><option value="06">Juni</option>
-            <option value="07">Juli</option><option value="08">Agustus</option>
-            <option value="09">September</option><option value="10">Oktober</option>
-            <option value="11">November</option><option value="12">Desember</option>
-          </select>
+        <div class="card-title"><span>📅 Riwayat Absensi</span>
+          <button class="pdf-btn" onclick="pdfAbsensi()">📥 PDF</button>
         </div>
-        <div id="absensiList">
-          <div class="page-loading"><div class="sp"></div></div>
-        </div>
+        <select class="fselect" id="filterBulan" onchange="loadAbsensi()" style="margin-bottom:12px">
+          <option value="">Semua Bulan</option>
+          <option value="01">Januari</option><option value="02">Februari</option>
+          <option value="03">Maret</option><option value="04">April</option>
+          <option value="05">Mei</option><option value="06">Juni</option>
+          <option value="07">Juli</option><option value="08">Agustus</option>
+          <option value="09">September</option><option value="10">Oktober</option>
+          <option value="11">November</option><option value="12">Desember</option>
+        </select>
+        <div id="absensiContent"><div class="load-spin"></div></div>
       </div>
     </div>
 
     <!-- ── NILAI ── -->
-    <div id="sec-nilai" class="section">
+    <div id="sec-nilai" class="page-sec" style="padding:0 12px">
       <div class="card">
-        <div class="card-header"><span>📝</span> Rekap Nilai</div>
-        <div class="filter-row">
-          <select class="filter-select" id="filterNilaiMapel" onchange="loadNilai()">
-            <option value="">Semua Mata Pelajaran</option>
-          </select>
+        <div class="card-title"><span>📝 Rekap Nilai</span>
+          <button class="pdf-btn" onclick="pdfNilai()">📥 PDF</button>
         </div>
-        <div id="nilaiList">
-          <div class="page-loading"><div class="sp"></div></div>
-        </div>
+        <select class="fselect" id="filterMapel" onchange="loadNilai()" style="margin-bottom:12px">
+          <option value="">Semua Mata Pelajaran</option>
+        </select>
+        <div id="nilaiContent"><div class="load-spin"></div></div>
       </div>
     </div>
 
     <!-- ── CATATAN ── -->
-    <div id="sec-catatan" class="section">
+    <div id="sec-catatan" class="page-sec" style="padding:0 12px">
       <div class="card">
-        <div class="card-header"><span>📋</span> Catatan & Bimbingan dari Guru</div>
-        <div id="catatanList">
-          <div class="page-loading"><div class="sp"></div></div>
-        </div>
+        <div class="card-title"><span>📋 Catatan & Bimbingan</span></div>
+        <div id="catatanContent"><div class="load-spin"></div></div>
       </div>
     </div>
 
-  </div><!-- /content -->
+  </div><!-- /app-scroll -->
 
-  <div class="watermark">Supported by D.D Candra © 2025 · APBO Siswa v1.0</div>
+  <!-- ── CHAT LAYER (full screen, di luar scroll) ── -->
+  <div id="chatLayer" style="display:none;position:fixed;inset:0;top:56px;bottom:var(--navbar-h);z-index:150;flex-direction:column;background:var(--bg)">
+    <div class="chat-header">
+      <div>
+        <h3>💬 Diskusi Kelas</h3>
+        <p id="chatSubtitle">Komunikasi antara guru, siswa & orang tua</p>
+      </div>
+    </div>
+    <div class="chat-msgs" id="chatMsgs" style="flex:1;overflow-y:auto;padding:12px;-webkit-overflow-scrolling:touch"><div class="load-spin"></div></div>
+    <div class="file-preview-bar" id="filePreviewBar"></div>
+    <div class="chat-input-bar" style="flex-shrink:0">
+      <div class="chat-input-row">
+        <label class="chat-attach-btn" title="Lampirkan file">
+          📎<input type="file" id="chatFileInput" style="display:none" multiple onchange="onFileSelected(this)">
+        </label>
+        <textarea class="chat-tinput" id="chatInput" placeholder="Tulis pesan..." rows="1" onkeydown="chatEnter(event)" oninput="autoResize(this)"></textarea>
+        <button class="chat-send-btn" onclick="sendChat()">➤</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <div class="bn-item active" onclick="goTab('home')" id="bn-home">
+      <div class="bn-icon">🏠</div>
+      <div class="bn-label">Beranda</div>
+    </div>
+    <div class="bn-item" onclick="goTab('absensi')" id="bn-absensi">
+      <div class="bn-icon">📅</div>
+      <div class="bn-label">Absensi</div>
+    </div>
+    <div class="bn-item" onclick="goTab('nilai')" id="bn-nilai">
+      <div class="bn-icon">📝</div>
+      <div class="bn-label">Nilai</div>
+    </div>
+    <div class="bn-item" onclick="goTab('catatan')" id="bn-catatan">
+      <div class="bn-icon">📋</div>
+      <div class="bn-label">Catatan</div>
+    </div>
+    <div class="bn-item" onclick="goTab('chat')" id="bn-chat">
+      <div class="bn-icon">💬<div class="bn-badge" id="chatBadge"></div></div>
+      <div class="bn-label">Diskusi</div>
+    </div>
+  </div>
+
 </div><!-- /appScreen -->
 
 <script>
 // ═══════════════════════════════════════════════
-//  APBO SISWA — Portal Orang Tua & Siswa
+//  APBO SISWA v7
 //  Supported by D.D Candra © 2025
 // ═══════════════════════════════════════════════
-
 const { createClient } = supabase;
-
-// ── CONFIG ──────────────────────────────────────
 const SUPA_URL = 'https://owejzwznmmyqxkefgbtv.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im93ZWp6d3pubW15cXhrZWZnYnR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1NDk5NjYsImV4cCI6MjA4NzEyNTk2Nn0.7WjNsY55AepK2ci9CpGO2G-YyG58YVi-IKrc1BQDu2A';
-const SCHOOL_NAME = 'SMP Negeri 6 Sampang';
+const SCHOOL   = 'SMP Negeri 6 Sampang';
 
-let db  = null;
+const db = createClient(SUPA_URL, SUPA_KEY);
 
-// Siswa yang sedang login
-let SISWA    = null;
-let KELAS_ID = null;
-let ALL_MAPEL= [];
-let ALL_KELAS= [];
+let SISWA = null, KELAS_ID = null;
+let ALL_MAPEL = [], ALL_KELAS = [];
+let chatFiles = [], chatChannel = null, unreadChat = 0;
+let NOTIFS = [], unreadNotif = 0;
 
-// ── INIT ────────────────────────────────────────
-(function init() {
-  db = createClient(SUPA_URL, SUPA_KEY);
-  document.getElementById('topbarSchool').textContent = SCHOOL_NAME;
-
-  // Cek sesi login
-  const sesi = sessionStorage.getItem('apbo_siswa');
-  if (sesi) {
-    try {
-      SISWA = JSON.parse(sesi);
-      masukApp();
-    } catch(e) { sessionStorage.removeItem('apbo_siswa'); }
-  }
+// ── INIT ─────────────────────────────────────
+(function(){
+  const s = sessionStorage.getItem('apbo_siswa');
+  if (s) { try { SISWA = JSON.parse(s); masukApp(); } catch(e) { sessionStorage.removeItem('apbo_siswa'); } }
 })();
 
-// ── LOGIN ────────────────────────────────────────
+// ── LOGIN ─────────────────────────────────────
 async function doLogin() {
-  if (!db) { showErr('Koneksi database gagal.'); return; }
   const nisn = document.getElementById('nisnInput').value.trim();
   const pass = document.getElementById('passInput').value.trim();
   const btn  = document.getElementById('loginBtn');
-
   if (!nisn) { showErr('NISN tidak boleh kosong'); return; }
   if (nisn !== pass) { showErr('Password tidak sesuai — password sama dengan NISN'); return; }
-
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Memverifikasi...';
-  const _safetyTimer = setTimeout(() => {
-    if (btn.disabled) {
-      btn.disabled = false;
-      btn.innerHTML = 'Masuk →';
-      showErr('Timeout — tidak dapat terhubung ke database');
-    }
-  }, 12000);
-
+  btn.innerHTML = '<div class="spinner"></div> Memverifikasi...';
   try {
-    // Cari dengan nis exact match
     let { data, error } = await db.from('siswa').select('*').eq('nis', nisn).limit(1);
-
-    // Jika tidak ketemu, coba tanpa awalan nol
-    if ((!data || !data.length) && !error) {
-      const noZero = nisn.replace(/^0+/, '');
-      const res2 = await db.from('siswa').select('*').eq('nis', noZero).limit(1);
-      data  = res2.data;
-      error = res2.error;
+    if ((!data||!data.length) && !error) {
+      const r = await db.from('siswa').select('*').eq('nis', nisn.replace(/^0+/,'')).limit(1);
+      data = r.data; error = r.error;
     }
-
-    // Jika masih tidak ketemu, coba ilike (partial match)
-    if ((!data || !data.length) && !error) {
-      const res3 = await db.from('siswa').select('*').ilike('nis', `%${nisn.replace(/^0+/,'')}%`).limit(1);
-      data  = res3.data;
-      error = res3.error;
-    }
-
-    if (error) throw new Error('Error DB: ' + error.message);
-    if (!data || data.length === 0) {
-      throw new Error(`NISN "${nisn}" tidak ditemukan. Pastikan NISN sesuai data di sekolah.`);
-    }
-
-    clearTimeout(_safetyTimer);
-    btn.disabled = false;
-    btn.innerHTML = 'Masuk →';
+    if (error) throw new Error(error.message);
+    if (!data||!data.length) throw new Error('NISN tidak ditemukan. Pastikan NISN sesuai data sekolah.');
     SISWA = data[0];
     sessionStorage.setItem('apbo_siswa', JSON.stringify(SISWA));
     masukApp();
-
   } catch(e) {
-    clearTimeout(_safetyTimer);
-    showErr(e.message || 'Gagal login');
-    btn.disabled = false;
-    btn.innerHTML = 'Masuk →';
+    showErr(e.message);
+    btn.disabled = false; btn.innerHTML = 'Masuk →';
   }
 }
-
-function showErr(msg) {
-  const el = document.getElementById('loginError');
-  el.textContent = '⚠ ' + msg;
-  el.style.display = 'block';
-  setTimeout(() => el.style.display = 'none', 8000);
+function showErr(m) {
+  const e = document.getElementById('loginErr');
+  e.textContent = '⚠ '+m; e.style.display = 'block';
+  setTimeout(()=>e.style.display='none',4000);
 }
-
 function doLogout() {
   if (!confirm('Keluar dari APBO Siswa?')) return;
+  if (chatChannel) db.removeChannel(chatChannel);
   sessionStorage.removeItem('apbo_siswa');
   SISWA = null;
   document.getElementById('loginScreen').classList.add('active');
+  document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('appScreen').classList.remove('active');
+  document.getElementById('appScreen').style.display = 'none';
   document.getElementById('nisnInput').value = '';
   document.getElementById('passInput').value = '';
-  const btn = document.getElementById('loginBtn');
-  btn.disabled = false; btn.innerHTML = 'Masuk →';
+  document.getElementById('loginBtn').disabled = false;
+  document.getElementById('loginBtn').innerHTML = 'Masuk →';
 }
 
-// ── MASUK APP ────────────────────────────────────
+// ── MASUK APP ─────────────────────────────────
 async function masukApp() {
-  try {
-    console.log('[masukApp] Memulai...', SISWA);
-    
-    document.getElementById('loginScreen').classList.remove('active');
-    document.getElementById('appScreen').classList.add('active');
-
-    // Isi profile banner
-    document.getElementById('pbName').textContent  = SISWA.nama || 'Siswa';
-    document.getElementById('pbNisn').textContent  = SISWA.nis  || '—';
-    document.getElementById('topbarSchool').textContent = SCHOOL_NAME;
-    console.log('[masukApp] Banner OK');
-
-    // Load master data dengan timeout
-    await Promise.race([
-      loadMasterData(),
-      new Promise((_,r)=>setTimeout(()=>r(new Error('loadMasterData timeout')),8000))
-    ]).catch(e => console.warn('[masukApp] loadMasterData:', e.message));
-    
-    isiKelas();
-    console.log('[masukApp] Master data OK, kelas:', KELAS_ID);
-
-    // Load semua data - allSettled agar satu gagal tidak menghentikan semua
-    const fns = [
-      ['AbsensiRingkasan', loadAbsensiRingkasan],
-      ['NilaiRingkasan',   loadNilaiRingkasan],
-      ['CatatanRingkasan', loadCatatanRingkasan],
-      ['Absensi',          loadAbsensi],
-      ['Nilai',            loadNilai],
-      ['Catatan',          loadCatatan],
-    ];
-
-    for (const [name, fn] of fns) {
-      try {
-        await Promise.race([fn(), new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),6000))]);
-        console.log('[masukApp]', name, 'OK');
-      } catch(e) {
-        console.warn('[masukApp]', name, 'GAGAL:', e.message);
-      }
-    }
-    
-    console.log('[masukApp] Selesai ✓');
-  } catch(e) {
-    console.error('[masukApp] ERROR:', e);
-    showErr('Gagal memuat data: ' + e.message);
-  }
+  document.getElementById('loginScreen').classList.remove('active');
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appScreen').classList.add('active');
+  document.getElementById('appScreen').style.display = 'flex';
+  document.getElementById('pbName').textContent = SISWA.nama||'Siswa';
+  document.getElementById('pbNisn').textContent = 'NISN: '+(SISWA.nis||'—');
+  KELAS_ID = SISWA.kelas_id;
+  await loadMaster();
+  document.getElementById('pbKelas').textContent = getNamaKelas(KELAS_ID);
+  // Load semua data paralel
+  await Promise.all([
+    loadAbsensiSummary(), loadNilaiRingkasan(),
+    loadCatatanRingkasan(), loadAbsensi(), loadNilai(), loadCatatan()
+  ]);
+  loadChat();
+  loadNotif();
 }
 
-// ── MASTER DATA ──────────────────────────────────
-async function loadMasterData() {
-  const [{ data: kelas }, { data: mapel }] = await Promise.all([
+// ── MASTER DATA ───────────────────────────────
+async function loadMaster() {
+  const [{ data: k }, { data: m }] = await Promise.all([
     db.from('kelas').select('*').order('nama'),
     db.from('mapel').select('*').order('nama')
   ]);
-  ALL_KELAS = kelas || [];
-  ALL_MAPEL = mapel || [];
-  KELAS_ID  = SISWA.kelas_id;
-
-  // Isi filter mapel di tab nilai
-  const sel = document.getElementById('filterNilaiMapel');
+  ALL_KELAS = k||[]; ALL_MAPEL = m||[];
+  const sel = document.getElementById('filterMapel');
   sel.innerHTML = '<option value="">Semua Mata Pelajaran</option>'
-    + ALL_MAPEL.map(m => `<option value="${m.id}">${m.nama}</option>`).join('');
+    + ALL_MAPEL.map(m=>`<option value="${m.id}">${m.nama}</option>`).join('');
 }
+const getNamaKelas = id => (ALL_KELAS.find(k=>k.id==id)||{}).nama||'—';
+const getNamaMapel = id => (ALL_MAPEL.find(m=>m.id==id)||{}).nama||'—';
 
-function isiKelas() {
-  const kls = ALL_KELAS.find(k => k.id == KELAS_ID);
-  document.getElementById('pbKelas').textContent = kls ? kls.nama : '—';
-}
-function getNamaKelas(id) { return (ALL_KELAS.find(k=>k.id==id)||{}).nama || '-'; }
-function getNamaMapel(id) { return (ALL_MAPEL.find(m=>m.id==id)||{}).nama || '-'; }
+// ── NAVIGASI ──────────────────────────────────
+function goTab(tab) {
+  document.querySelectorAll('.page-sec').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.bn-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('bn-' + tab).classList.add('active');
 
-// ── SWITCH TAB ───────────────────────────────────
-function switchTab(tab) {
-  document.querySelectorAll('.nav-tab').forEach((t,i) => {
-    const tabs = ['ringkasan','absensi','nilai','catatan'];
-    t.classList.toggle('active', tabs[i] === tab);
-  });
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.getElementById('sec-' + tab).classList.add('active');
-}
+  const chatLayer = document.getElementById('chatLayer');
+  const banner    = document.querySelector('.profile-banner');
 
-// ══════════════════════════════════════════════════
-//  RINGKASAN
-// ══════════════════════════════════════════════════
-async function loadAbsensiRingkasan() {
-  if (!SISWA || !db) return;
-  const { data } = await db.from('absensi').select('status').eq('siswa_id', SISWA.id);
-  const rec = data || [];
-  const H = rec.filter(r=>r.status==='H').length;
-  const S = rec.filter(r=>r.status==='S').length;
-  const I = rec.filter(r=>r.status==='I').length;
-  const A = rec.filter(r=>r.status==='A').length;
-  document.getElementById('sumH').textContent = H;
-  document.getElementById('sumS').textContent = S;
-  document.getElementById('sumI').textContent = I;
-  document.getElementById('sumA').textContent = A;
-}
-
-async function loadNilaiRingkasan() {
-  if (!SISWA || !db) return;
-  const { data } = await db.from('nilai').select('*').eq('siswa_id', SISWA.id);
-  const rec = data || [];
-  const el  = document.getElementById('nilaiRingkasan');
-
-  if (!rec.length) {
-    el.innerHTML = '<div class="empty"><div class="empty-icon">📝</div><p>Belum ada data nilai</p></div>';
-    return;
+  if (tab === 'chat') {
+    // Sembunyikan konten scroll, tampilkan chat layer
+    chatLayer.style.display = 'flex';
+    if (banner) banner.style.display = 'none';
+    document.getElementById('appScroll').style.overflow = 'hidden';
+    unreadChat = 0;
+    document.getElementById('chatBadge').classList.remove('show');
+    document.getElementById('chatBadge').textContent = '';
+    setTimeout(scrollChatBottom, 100);
+  } else {
+    // Sembunyikan chat layer, tampilkan konten normal
+    chatLayer.style.display = 'none';
+    if (banner) banner.style.display = '';
+    document.getElementById('appScroll').style.overflow = 'auto';
+    document.getElementById('sec-' + tab).classList.add('active');
   }
-
-  // Kelompokkan per mapel
-  const perMapel = {};
-  rec.forEach(n => {
-    if (!perMapel[n.mapel_id]) perMapel[n.mapel_id] = [];
-    perMapel[n.mapel_id].push(n.skor);
-  });
-
-  el.innerHTML = `<div class="tbl-wrap"><table>
-    <thead><tr><th>Mata Pelajaran</th><th>Jml Data</th><th>Rata-rata</th><th>Status</th></tr></thead>
-    <tbody>
-    ${Object.entries(perMapel).map(([mapelId, skors]) => {
-      const avg = Math.round(skors.reduce((a,b)=>a+b,0)/skors.length);
-      const cls = avg>=75?'score-good':avg>=60?'score-mid':'score-bad';
-      const lbl = avg>=75?'Baik':avg>=60?'Cukup':'Perlu Perhatian';
-      const bc  = avg>=75?'badge-hadir':avg>=60?'badge-sakit':'badge-danger';
-      return `<tr>
-        <td><strong>${getNamaMapel(mapelId)}</strong></td>
-        <td style="color:var(--text-light)">${skors.length}×</td>
-        <td><span class="nilai-score ${cls}">${avg}</span></td>
-        <td><span class="badge ${bc}">${lbl}</span></td>
-      </tr>`;
-    }).join('')}
-    </tbody></table></div>`;
 }
 
-async function loadCatatanRingkasan() {
-  if (!SISWA || !db) return;
-  const { data } = await db.from('bimbingan').select('*')
-    .eq('siswa_id', SISWA.id).order('tanggal',{ascending:false}).limit(3);
-  const el = document.getElementById('catatanRingkasan');
-  if (!data || !data.length) {
-    el.innerHTML = '<div class="empty"><div class="empty-icon">✅</div><h3>Tidak Ada Catatan</h3><p>Tidak ada catatan dari guru</p></div>';
-    return;
-  }
-  el.innerHTML = data.map(b => renderCatatanItem(b)).join('');
-}
-
-// ══════════════════════════════════════════════════
+// ══════════════════════════════════════════════
 //  ABSENSI
-// ══════════════════════════════════════════════════
+// ══════════════════════════════════════════════
+async function loadAbsensiSummary() {
+  const { data } = await db.from('absensi').select('status').eq('siswa_id',SISWA.id);
+  const r = data||[];
+  document.getElementById('sumH').textContent = r.filter(x=>x.status==='H').length;
+  document.getElementById('sumS').textContent = r.filter(x=>x.status==='S').length;
+  document.getElementById('sumI').textContent = r.filter(x=>x.status==='I').length;
+  document.getElementById('sumA').textContent = r.filter(x=>x.status==='A').length;
+}
 async function loadAbsensi() {
-  if (!SISWA || !db) return;
-  const bulan = document.getElementById('filterAbsenBulan')?.value;
-  const el    = document.getElementById('absensiList');
-  el.innerHTML = '<div class="page-loading"><div class="sp"></div></div>';
-
-  let query = db.from('absensi').select('*').eq('siswa_id', SISWA.id).order('tanggal',{ascending:false});
-  if (bulan) {
-    const yr = new Date().getFullYear();
-    query = query.gte('tanggal',`${yr}-${bulan}-01`).lte('tanggal',`${yr}-${bulan}-31`);
-  }
-  const { data } = await query;
-  const rec = data || [];
-
-  if (!rec.length) {
-    el.innerHTML = '<div class="empty"><div class="empty-icon">📅</div><h3>Belum Ada Data Absensi</h3></div>';
-    return;
-  }
-
-  const H = rec.filter(r=>r.status==='H').length;
-  const S = rec.filter(r=>r.status==='S').length;
-  const I = rec.filter(r=>r.status==='I').length;
-  const A = rec.filter(r=>r.status==='A').length;
-
-  el.innerHTML = `
-    <div class="absen-summary" style="margin-bottom:14px">
-      <div class="absen-sum-item" style="background:var(--success-light)">
-        <div class="absen-sum-val" style="color:var(--success)">${H}</div>
-        <div class="absen-sum-lbl" style="color:var(--success)">Hadir</div>
-      </div>
-      <div class="absen-sum-item" style="background:#fffbeb">
-        <div class="absen-sum-val" style="color:#d97706">${S}</div>
-        <div class="absen-sum-lbl" style="color:#d97706">Sakit</div>
-      </div>
-      <div class="absen-sum-item" style="background:var(--info-light)">
-        <div class="absen-sum-val" style="color:var(--info)">${I}</div>
-        <div class="absen-sum-lbl" style="color:var(--info)">Izin</div>
-      </div>
-      <div class="absen-sum-item" style="background:var(--danger-light)">
-        <div class="absen-sum-val" style="color:var(--danger)">${A}</div>
-        <div class="absen-sum-lbl" style="color:var(--danger)">Alpha</div>
-      </div>
-    </div>
-    <div class="tbl-wrap"><table>
-      <thead><tr><th>Tanggal</th><th>Hari</th><th>Status</th></tr></thead>
-      <tbody>
-      ${rec.map(r => {
-        const hari = r.tanggal ? new Date(r.tanggal).toLocaleDateString('id-ID',{weekday:'long'}) : '-';
-        const badgeMap = {H:'badge-hadir',S:'badge-sakit',I:'badge-izin',A:'badge-alpha'};
-        const labelMap = {H:'✓ Hadir',S:'Sakit',I:'Izin',A:'⚠ Alpha'};
-        const cls = badgeMap[r.status] || 'badge-info';
-        return `<tr>
-          <td>${r.tanggal||'-'}</td>
-          <td style="color:var(--text-light)">${hari}</td>
-          <td><span class="badge ${cls}">${labelMap[r.status]||r.status}</span></td>
-        </tr>`;
-      }).join('')}
-      </tbody></table></div>`;
+  const bulan = document.getElementById('filterBulan').value;
+  const el = document.getElementById('absensiContent');
+  el.innerHTML = '<div class="load-spin"></div>';
+  let q = db.from('absensi').select('*').eq('siswa_id',SISWA.id).order('tanggal',{ascending:false});
+  if (bulan) { const yr=new Date().getFullYear(); q=q.gte('tanggal',`${yr}-${bulan}-01`).lte('tanggal',`${yr}-${bulan}-31`); }
+  const { data } = await q;
+  const r = data||[];
+  if (!r.length) { el.innerHTML='<div class="empty"><div class="ei">📅</div><h3>Belum ada data absensi</h3></div>'; return; }
+  const H=r.filter(x=>x.status==='H').length, S=r.filter(x=>x.status==='S').length,
+        I=r.filter(x=>x.status==='I').length, A=r.filter(x=>x.status==='A').length;
+  const bMap={H:'b-h',S:'b-s',I:'b-i',A:'b-a'};
+  const lMap={H:'✓ Hadir',S:'Sakit',I:'Izin',A:'⚠ Alpha'};
+  el.innerHTML=`<div class="stat-row" style="margin-bottom:14px">
+    <div class="stat-box" style="background:var(--green-l)"><div class="stat-val" style="color:var(--green)">${H}</div><div class="stat-lbl" style="color:var(--green)">Hadir</div></div>
+    <div class="stat-box" style="background:var(--orange-l)"><div class="stat-val" style="color:var(--orange)">${S}</div><div class="stat-lbl" style="color:var(--orange)">Sakit</div></div>
+    <div class="stat-box" style="background:var(--blue-l)"><div class="stat-val" style="color:var(--blue)">${I}</div><div class="stat-lbl" style="color:var(--blue)">Izin</div></div>
+    <div class="stat-box" style="background:var(--red-l)"><div class="stat-val" style="color:var(--red)">${A}</div><div class="stat-lbl" style="color:var(--red)">Alpha</div></div>
+  </div>
+  <div class="tbl-wrap"><table><thead><tr><th>Tanggal</th><th>Hari</th><th>Status</th></tr></thead><tbody>
+  ${r.map(x=>{const hr=x.tanggal?new Date(x.tanggal).toLocaleDateString('id-ID',{weekday:'short'}):'-';return`<tr><td>${x.tanggal||'-'}</td><td style="color:var(--text3)">${hr}</td><td><span class="badge ${bMap[x.status]||'b-p'}">${lMap[x.status]||x.status}</span></td></tr>`;}).join('')}
+  </tbody></table></div>`;
 }
 
-// ══════════════════════════════════════════════════
+// ══════════════════════════════════════════════
 //  NILAI
-// ══════════════════════════════════════════════════
+// ══════════════════════════════════════════════
+async function loadNilaiRingkasan() {
+  const { data } = await db.from('nilai').select('*').eq('siswa_id',SISWA.id);
+  const el = document.getElementById('nilaiRingkasan');
+  if (!data||!data.length) { el.innerHTML='<div class="empty"><div class="ei">📝</div><p>Belum ada data nilai</p></div>'; return; }
+  const pm={};
+  data.forEach(n=>{ if(!pm[n.mapel_id]) pm[n.mapel_id]=[]; pm[n.mapel_id].push(n.skor); });
+  el.innerHTML=`<div class="tbl-wrap"><table><thead><tr><th>Mata Pelajaran</th><th>Data</th><th>Rata-rata</th></tr></thead><tbody>
+  ${Object.entries(pm).map(([mid,sc])=>{
+    const avg=Math.round(sc.reduce((a,b)=>a+b,0)/sc.length);
+    const cls=avg>=75?'ng':avg>=60?'nm':'nb';
+    return`<tr><td><strong>${getNamaMapel(mid)}</strong></td><td style="color:var(--text3)">${sc.length}×</td><td><span class="ns ${cls}">${avg}</span></td></tr>`;
+  }).join('')}</tbody></table></div>`;
+}
 async function loadNilai() {
-  if (!SISWA || !db) return;
-  const mapelId = document.getElementById('filterNilaiMapel')?.value;
-  const el      = document.getElementById('nilaiList');
-  el.innerHTML  = '<div class="page-loading"><div class="sp"></div></div>';
-
-  let query = db.from('nilai').select('*').eq('siswa_id', SISWA.id);
-  if (mapelId) query = query.eq('mapel_id', mapelId);
-  const { data } = await query;
-  const rec = data || [];
-
-  if (!rec.length) {
-    el.innerHTML = '<div class="empty"><div class="empty-icon">📝</div><h3>Belum Ada Data Nilai</h3></div>';
-    return;
-  }
-
-  // Kelompokkan per mapel
-  const perMapel = {};
-  rec.forEach(n => {
-    if (!perMapel[n.mapel_id]) perMapel[n.mapel_id] = {};
-    perMapel[n.mapel_id][n.kategori] = n.skor;
-  });
-
-  const cats = ['PR','Harian','Tugas','Projek','Portofolio','Sumatif','STS','SAS'];
-
-  el.innerHTML = Object.entries(perMapel).map(([mapelId, nilaiMap]) => {
-    const scores = cats.map(c => nilaiMap[c]);
-    const filled = scores.filter(x => x !== undefined && x > 0);
-    const avg    = filled.length ? Math.round(filled.reduce((a,b)=>a+b,0)/filled.length) : 0;
-    const avgCls = avg>=75?'score-good':avg>=60?'score-mid':'score-bad';
-
-    return `<div style="margin-bottom:16px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div style="font-size:13px;font-weight:700">${getNamaMapel(mapelId)}</div>
-        <div style="display:flex;align-items:center;gap:6px">
-          <span style="font-size:11px;color:var(--text-light)">Rata-rata</span>
-          <span class="nilai-score ${avgCls}" style="width:44px;height:32px;font-size:14px">${avg||'—'}</span>
-        </div>
+  const mapelId = document.getElementById('filterMapel').value;
+  const el = document.getElementById('nilaiContent');
+  el.innerHTML='<div class="load-spin"></div>';
+  let q = db.from('nilai').select('*').eq('siswa_id',SISWA.id);
+  if (mapelId) q=q.eq('mapel_id',mapelId);
+  const { data } = await q;
+  const r=data||[];
+  if (!r.length) { el.innerHTML='<div class="empty"><div class="ei">📝</div><h3>Belum ada data nilai</h3></div>'; return; }
+  const pm={};
+  r.forEach(n=>{ if(!pm[n.mapel_id]) pm[n.mapel_id]={}; pm[n.mapel_id][n.kategori]=n.skor; });
+  const cats=['PR','Harian','Tugas','Projek','Portofolio','Sumatif','STS','SAS'];
+  el.innerHTML=Object.entries(pm).map(([mid,nm])=>{
+    const sc=cats.map(c=>nm[c]).filter(x=>x!==undefined&&x>0);
+    const avg=sc.length?Math.round(sc.reduce((a,b)=>a+b,0)/sc.length):0;
+    const ac=avg>=75?'ng':avg>=60?'nm':'nb';
+    return`<div style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <strong style="font-size:13px">${getNamaMapel(mid)}</strong>
+        <span class="ns ${ac}" style="width:44px;height:30px;font-size:14px">${avg||'—'}</span>
       </div>
-      <div class="tbl-wrap"><table>
-        <thead><tr>${cats.map(c=>`<th style="text-align:center">${c}</th>`).join('')}</tr></thead>
-        <tbody><tr>${cats.map(c => {
-          const s = nilaiMap[c];
-          if (s === undefined) return `<td style="text-align:center"><span class="nilai-score score-empty">—</span></td>`;
-          const cls = s>=75?'score-good':s>=60?'score-mid':'score-bad';
-          return `<td style="text-align:center"><span class="nilai-score ${cls}">${s}</span></td>`;
-        }).join('')}</tr></tbody>
-      </table></div>
+      <div class="tbl-wrap"><table><thead><tr>${cats.map(c=>`<th style="text-align:center">${c}</th>`).join('')}</tr></thead>
+      <tbody><tr>${cats.map(c=>{const s=nm[c];if(s===undefined)return`<td style="text-align:center"><span class="ns ne">—</span></td>`;const cl=s>=75?'ng':s>=60?'nm':'nb';return`<td style="text-align:center"><span class="ns ${cl}">${s}</span></td>`;}).join('')}</tr></tbody></table></div>
     </div>`;
-  }).join('<hr style="border:none;border-top:1px solid var(--border);margin:16px 0">');
+  }).join('<hr style="border:none;border-top:1px solid var(--border);margin:14px 0">');
 }
 
-// ══════════════════════════════════════════════════
-//  CATATAN BIMBINGAN
-// ══════════════════════════════════════════════════
+// ══════════════════════════════════════════════
+//  CATATAN
+// ══════════════════════════════════════════════
+async function loadCatatanRingkasan() {
+  const { data } = await db.from('bimbingan').select('*').eq('siswa_id',SISWA.id).order('tanggal',{ascending:false}).limit(3);
+  document.getElementById('catatanRingkasan').innerHTML = data&&data.length
+    ? data.map(renderCatatan).join('')
+    : '<div class="empty"><div class="ei">✅</div><h3>Tidak ada catatan</h3></div>';
+}
 async function loadCatatan() {
-  if (!SISWA || !db) return;
-  const el = document.getElementById('catatanList');
-  el.innerHTML = '<div class="page-loading"><div class="sp"></div></div>';
-
-  const { data } = await db.from('bimbingan').select('*')
-    .eq('siswa_id', SISWA.id).order('tanggal',{ascending:false});
-
-  if (!data || !data.length) {
-    el.innerHTML = `<div class="empty">
-      <div class="empty-icon">✅</div>
-      <h3>Tidak Ada Catatan</h3>
-      <p>Tidak ada catatan dari guru untuk siswa ini</p>
-    </div>`;
-    return;
-  }
-  el.innerHTML = data.map(b => renderCatatanItem(b)).join('');
+  const el=document.getElementById('catatanContent');
+  el.innerHTML='<div class="load-spin"></div>';
+  const { data } = await db.from('bimbingan').select('*').eq('siswa_id',SISWA.id).order('tanggal',{ascending:false});
+  el.innerHTML = data&&data.length ? data.map(renderCatatan).join('')
+    : '<div class="empty"><div class="ei">✅</div><h3>Tidak Ada Catatan</h3><p>Tidak ada catatan dari guru untuk siswa ini</p></div>';
 }
-
-function renderCatatanItem(b) {
-  const kat = (b.kategori||'').toLowerCase();
-  const katClass = kat.includes('nakal')||kat.includes('disiplin')||kat.includes('pelanggaran')
-    ? 'kat-kenakalan' : kat.includes('prestasi') ? 'kat-prestasi' : '';
-  const katBadge = kat.includes('nakal')||kat.includes('disiplin')
-    ? 'badge-danger' : kat.includes('prestasi') ? 'badge-hadir' : 'badge-warning';
-  return `<div class="catatan-item ${katClass}">
-    <div class="catatan-meta">
-      <span class="catatan-tanggal">📅 ${b.tanggal||'-'}</span>
-      <span class="badge ${katBadge}">${b.kategori||'Bimbingan'}</span>
-    </div>
-    <div class="catatan-masalah">${b.masalah||'-'}</div>
-    ${b.solusi ? `<div class="catatan-solusi">→ Tindak lanjut: ${b.solusi}</div>` : ''}
+function renderCatatan(b) {
+  const kat=(b.kategori||'').toLowerCase();
+  const kc=kat.includes('nakal')||kat.includes('disiplin')?'kat-k':kat.includes('prestasi')?'kat-p':'';
+  const kb=kat.includes('nakal')||kat.includes('disiplin')?'b-a':kat.includes('prestasi')?'b-h':'b-s';
+  return`<div class="cat-item ${kc}">
+    <div class="cat-meta"><span class="cat-tgl">📅 ${b.tanggal||'-'}</span><span class="badge ${kb}">${b.kategori||'Bimbingan'}</span></div>
+    <div class="cat-judul">${b.masalah||'-'}</div>
+    ${b.solusi?`<div class="cat-isi">→ ${b.solusi}</div>`:''}
   </div>`;
 }
 
-// ── TOAST ─────────────────────────────────────────
-let _tt = null;
-function toast(msg, isErr=false) {
-  const t = document.getElementById('toast');
-  if (_tt) clearTimeout(_tt);
-  t.textContent = msg; t.className = isErr ? 'err' : '';
-  t.classList.add('show');
-  _tt = setTimeout(()=>t.classList.remove('show'), 3500);
+// ══════════════════════════════════════════════
+//  NOTIFIKASI
+// ══════════════════════════════════════════════
+async function loadNotif() {
+  // Baca pengumuman dari tabel app_settings key 'pengumuman'
+  try {
+    const { data } = await db.from('app_settings').select('value').eq('key','pengumuman').maybeSingle();
+    if (data&&data.value) {
+      try {
+        const list = typeof data.value==='string' ? JSON.parse(data.value) : data.value;
+        NOTIFS = Array.isArray(list) ? list : [];
+      } catch(e) {
+        // Jika value adalah string biasa, buat satu notif
+        NOTIFS = [{ id:1, judul:'Pengumuman', isi:data.value, waktu:new Date().toLocaleString('id-ID'), dibaca:false }];
+      }
+    }
+  } catch(e) {}
+
+  // Juga cek bimbingan terbaru sebagai notif
+  const { data: baru } = await db.from('bimbingan').select('*')
+    .eq('siswa_id',SISWA.id).order('created_at',{ascending:false}).limit(3);
+  (baru||[]).forEach(b=>{
+    NOTIFS.unshift({ id:'b'+b.id, judul:'Catatan Guru', isi:b.masalah||'Ada catatan baru dari guru', waktu:b.tanggal||'', dibaca:false });
+  });
+
+  renderNotif();
+}
+function renderNotif() {
+  unreadNotif = NOTIFS.filter(n=>!n.dibaca).length;
+  const dot = document.getElementById('bellDot');
+  if (unreadNotif > 0) dot.classList.add('show'); else dot.classList.remove('show');
+  const el = document.getElementById('notifList');
+  if (!NOTIFS.length) { el.innerHTML='<div class="notif-empty">Tidak ada notifikasi</div>'; return; }
+  el.innerHTML = NOTIFS.map(n=>`
+    <div class="notif-item ${n.dibaca?'':'unread'}" onclick="bacaNotif('${n.id}')">
+      <div class="notif-item-title">${n.judul}</div>
+      <div class="notif-item-body">${n.isi}</div>
+      <div class="notif-item-time">${n.waktu}</div>
+    </div>`).join('');
+}
+function bacaNotif(id) {
+  NOTIFS = NOTIFS.map(n=>n.id==id?{...n,dibaca:true}:n);
+  renderNotif();
+}
+function toggleNotif() {
+  document.getElementById('notifOverlay').classList.toggle('open');
+  // tandai semua dibaca saat buka panel
+  NOTIFS = NOTIFS.map(n=>({...n,dibaca:true}));
+  renderNotif();
+}
+function closeNotif(e) { if(e.target.id==='notifOverlay') closeNotifPanel(); }
+function closeNotifPanel() { document.getElementById('notifOverlay').classList.remove('open'); }
+
+// ══════════════════════════════════════════════
+//  CHAT / DISKUSI
+// ══════════════════════════════════════════════
+async function loadChat() {
+  const el = document.getElementById('chatMsgs');
+  el.innerHTML = '<div class="load-spin"></div>';
+
+  // Pastikan tabel chat_apbo ada, load pesan
+  const { data, error } = await db.from('chat_apbo').select('*')
+    .eq('kelas_id', KELAS_ID)
+    .order('created_at', { ascending: true })
+    .limit(100);
+
+  if (error) {
+    el.innerHTML = `<div class="empty"><div class="ei">💬</div><h3>Fitur Chat</h3>
+      <p>Jalankan SQL setup di Supabase untuk mengaktifkan fitur chat</p></div>`;
+    return;
+  }
+
+  renderChatMsgs(data||[]);
+  subscribeChat();
+}
+
+function renderChatMsgs(msgs) {
+  const el = document.getElementById('chatMsgs');
+  if (!msgs.length) {
+    el.innerHTML = '<div class="empty"><div class="ei">💬</div><h3>Belum ada pesan</h3><p>Mulai diskusi dengan mengirim pesan</p></div>';
+    return;
+  }
+
+  let html = '', lastDay = '';
+  msgs.forEach(m => {
+    const isMe = m.nisn === (SISWA.nis||'');
+    const d = m.created_at ? new Date(m.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}) : '';
+    if (d !== lastDay) {
+      html += `<div class="chat-day">${d}</div>`;
+      lastDay = d;
+    }
+    const waktu = m.created_at ? new Date(m.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : '';
+    const inisial = (m.nama||'?')[0].toUpperCase();
+
+    let fileHtml = '';
+    if (m.file_url) {
+      const ext = (m.file_url.split('.').pop()||'').toLowerCase();
+      const ico = ['jpg','jpeg','png','gif','webp'].includes(ext) ? '🖼️' :
+                  ['pdf'].includes(ext) ? '📄' :
+                  ['doc','docx'].includes(ext) ? '📝' :
+                  ['xls','xlsx'].includes(ext) ? '📊' : '📎';
+      fileHtml = `<div class="attach-box" onclick="downloadFile('${m.file_url}','${m.file_name||'file'}')">
+        <div class="attach-icon">${ico}</div>
+        <div style="flex:1;min-width:0">
+          <div class="attach-name">${m.file_name||'File'}</div>
+          <div class="attach-size">${m.file_size||''}</div>
+        </div>
+        <div class="attach-dl">⬇️</div>
+      </div>`;
+    }
+
+    html += `<div class="bubble-wrap ${isMe?'me':'other'}">
+      ${!isMe?`<div class="bubble-avatar">${inisial}</div>`:''}
+      <div>
+        ${!isMe?`<div class="bubble-name">${m.nama||'—'}</div>`:''}
+        <div class="bubble">
+          ${!isMe&&m.peran?`<span style="font-size:10px;opacity:.7;display:block;margin-bottom:3px">${m.peran}</span>`:''}
+          ${m.pesan||''}
+          ${fileHtml}
+          <div class="bubble-meta">${waktu}</div>
+        </div>
+      </div>
+    </div>`;
+  });
+  el.innerHTML = html;
+  scrollChatBottom();
+}
+
+function subscribeChat() {
+  chatChannel = db.channel('chat_apbo_kelas_' + KELAS_ID)
+    .on('postgres_changes', { event:'INSERT', schema:'public', table:'chat_apbo', filter:`kelas_id=eq.${KELAS_ID}` }, payload => {
+      appendChatMsg(payload.new);
+      // Jika tidak di tab chat, tambah badge
+      if (!document.getElementById('bn-chat').classList.contains('active')) {
+        unreadChat++;
+        const badge = document.getElementById('chatBadge');
+        badge.textContent = unreadChat > 9 ? '9+' : unreadChat;
+        badge.classList.add('show');
+      }
+    })
+    .subscribe();
+}
+
+function appendChatMsg(m) {
+  const el = document.getElementById('chatMsgs');
+  // Hapus empty state jika ada
+  if (el.querySelector('.empty')) el.innerHTML = '';
+  const isMe = m.nisn === (SISWA.nis||'');
+  const waktu = m.created_at ? new Date(m.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : '';
+  const inisial = (m.nama||'?')[0].toUpperCase();
+  let fileHtml = '';
+  if (m.file_url) {
+    const ext = (m.file_url.split('.').pop()||'').toLowerCase();
+    const ico = ['jpg','jpeg','png','gif','webp'].includes(ext)?'🖼️':['pdf'].includes(ext)?'📄':'📎';
+    fileHtml = `<div class="attach-box" onclick="downloadFile('${m.file_url}','${m.file_name||'file'}')">
+      <div class="attach-icon">${ico}</div>
+      <div style="flex:1;min-width:0"><div class="attach-name">${m.file_name||'File'}</div></div>
+      <div class="attach-dl">⬇️</div></div>`;
+  }
+  const div = document.createElement('div');
+  div.className = 'bubble-wrap ' + (isMe?'me':'other');
+  div.innerHTML = `${!isMe?`<div class="bubble-avatar">${inisial}</div>`:''}
+    <div>
+      ${!isMe?`<div class="bubble-name">${m.nama||'—'}</div>`:''}
+      <div class="bubble">${m.pesan||''}${fileHtml}<div class="bubble-meta">${waktu}</div></div>
+    </div>`;
+  el.appendChild(div);
+  scrollChatBottom();
+}
+
+function scrollChatBottom() {
+  const el = document.getElementById('chatMsgs');
+  el.scrollTop = el.scrollHeight;
+}
+
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const pesan = input.value.trim();
+  if (!pesan && !chatFiles.length) return;
+  input.value = ''; input.style.height = '';
+
+  // Upload file jika ada
+  let fileUrl = null, fileName = null, fileSize = null;
+  if (chatFiles.length > 0) {
+    const f = chatFiles[0];
+    fileName = f.name;
+    fileSize = formatFileSize(f.size);
+    // Simpan base64 ke kolom file_data (karena storage butuh auth)
+    const b64 = await fileToBase64(f);
+    fileUrl = b64; // simpan base64 langsung
+    chatFiles = [];
+    updateFilePreview();
+  }
+
+  const row = {
+    kelas_id : KELAS_ID,
+    siswa_id : SISWA.id,
+    nisn     : SISWA.nis || '',
+    nama     : SISWA.nama || 'Siswa',
+    peran    : 'Siswa',
+    pesan    : pesan || (fileName ? '[File: '+fileName+']' : ''),
+    file_url : fileUrl,
+    file_name: fileName,
+    file_size: fileSize
+  };
+  const { error } = await db.from('chat_apbo').insert(row);
+  if (error) toast('Gagal kirim: '+error.message, true);
+}
+
+function onFileSelected(input) {
+  chatFiles = Array.from(input.files);
+  updateFilePreview();
+  input.value = '';
+}
+function updateFilePreview() {
+  const bar = document.getElementById('filePreviewBar');
+  if (!chatFiles.length) { bar.classList.remove('show'); bar.innerHTML=''; return; }
+  bar.classList.add('show');
+  bar.innerHTML = chatFiles.map((f,i)=>`
+    <div class="file-chip">📎 ${f.name.substring(0,20)}${f.name.length>20?'...':''}
+      <button class="file-chip-rm" onclick="removeFile(${i})">✕</button>
+    </div>`).join('');
+}
+function removeFile(i) { chatFiles.splice(i,1); updateFilePreview(); }
+
+function downloadFile(url, name) {
+  if (url.startsWith('data:')) {
+    // base64
+    const a = document.createElement('a');
+    a.href = url; a.download = name; a.click();
+  } else {
+    window.open(url,'_blank');
+  }
+}
+
+function chatEnter(e) {
+  if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+}
+function autoResize(el) {
+  el.style.height=''; el.style.height=Math.min(el.scrollHeight,100)+'px';
+}
+
+// ── HELPERS ──────────────────────────────────
+function fileToBase64(file) {
+  return new Promise((res,rej)=>{
+    const r = new FileReader();
+    r.onload = e => res(e.target.result);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+function formatFileSize(b) {
+  if (b<1024) return b+'B';
+  if (b<1048576) return (b/1024).toFixed(1)+'KB';
+  return (b/1048576).toFixed(1)+'MB';
+}
+
+// ══════════════════════════════════════════════
+//  PDF DOWNLOAD
+// ══════════════════════════════════════════════
+function addKop(doc) {
+  const w = doc.internal.pageSize.getWidth();
+  doc.setFillColor(67,56,202); doc.rect(0,0,w,30,'F');
+  doc.setFontSize(14); doc.setFont('helvetica','bold'); doc.setTextColor(255,255,255);
+  doc.text(SCHOOL, w/2, 13, {align:'center'});
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text('APBO Siswa — Portal Informasi Orang Tua & Siswa', w/2, 21, {align:'center'});
+  doc.setTextColor(30,30,30);
+  // Watermark bawah
+  const h = doc.internal.pageSize.getHeight();
+  doc.setFontSize(7); doc.setTextColor(180,180,180);
+  doc.text('Supported by D.D Candra © 2025', w/2, h-4, {align:'center'});
+  doc.setTextColor(30,30,30);
+}
+
+async function pdfAbsensi() {
+  const { data } = await db.from('absensi').select('*').eq('siswa_id',SISWA.id).order('tanggal',{ascending:false});
+  if (!data||!data.length) { toast('Belum ada data absensi',true); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  addKop(doc);
+  doc.setFontSize(12); doc.setFont('helvetica','bold');
+  doc.text('LAPORAN ABSENSI SISWA', 105, 40, {align:'center'});
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text(`Nama: ${SISWA.nama||'—'}   |   Kelas: ${getNamaKelas(KELAS_ID)}   |   NISN: ${SISWA.nis||'—'}`, 14, 47);
+  const bMap={H:'Hadir',S:'Sakit',I:'Izin',A:'Alpha'};
+  doc.autoTable({
+    startY:52,
+    head:[['No','Tanggal','Hari','Status']],
+    body:data.map((r,i)=>[i+1,r.tanggal||'-',r.tanggal?new Date(r.tanggal).toLocaleDateString('id-ID',{weekday:'long'}):'-',bMap[r.status]||r.status]),
+    styles:{fontSize:9}, headStyles:{fillColor:[67,56,202]}
+  });
+  saveMobilePdf(doc,'Absensi_'+SISWA.nama+'.pdf');
+}
+
+async function pdfNilai() {
+  const { data } = await db.from('nilai').select('*').eq('siswa_id',SISWA.id);
+  if (!data||!data.length) { toast('Belum ada data nilai',true); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'landscape' });
+  addKop(doc);
+  doc.setFontSize(12); doc.setFont('helvetica','bold');
+  doc.text('REKAP NILAI SISWA', 148, 40, {align:'center'});
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text(`Nama: ${SISWA.nama||'—'}   |   Kelas: ${getNamaKelas(KELAS_ID)}   |   NISN: ${SISWA.nis||'—'}`, 14, 47);
+  const pm={};
+  data.forEach(n=>{ if(!pm[n.mapel_id]) pm[n.mapel_id]={}; pm[n.mapel_id][n.kategori]=n.skor; });
+  const cats=['PR','Harian','Tugas','Projek','Portofolio','Sumatif','STS','SAS'];
+  const rows=Object.entries(pm).map(([mid,nm])=>{
+    const sc=cats.map(c=>nm[c]).filter(x=>x!==undefined&&x>0);
+    const avg=sc.length?Math.round(sc.reduce((a,b)=>a+b,0)/sc.length):0;
+    return [getNamaMapel(mid),...cats.map(c=>nm[c]!==undefined?nm[c]:'—'),avg];
+  });
+  doc.autoTable({
+    startY:52,
+    head:[['Mata Pelajaran',...cats,'Rata-rata']],
+    body:rows,
+    styles:{fontSize:8}, headStyles:{fillColor:[67,56,202]},
+    didParseCell(d){
+      if(d.section==='body'&&d.column.index>0){
+        const v=parseFloat(d.cell.raw);
+        if(!isNaN(v)) d.cell.styles.textColor=v>=75?[16,185,129]:v>=60?[245,158,11]:[239,68,68];
+      }
+    }
+  });
+  saveMobilePdf(doc,'Nilai_'+SISWA.nama+'.pdf');
+}
+
+function saveMobilePdf(doc, filename) {
+  try {
+    const blob = doc.output('blob');
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.target = '_blank';
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); },2000);
+    toast('PDF berhasil diunduh ✓');
+  } catch(e) {
+    try { const uri=doc.output('datauristring'); const w=window.open(); if(w) w.document.write(`<iframe src="${uri}" style="width:100%;height:100vh;border:none"></iframe>`); }
+    catch(e2) { doc.save(filename); }
+    toast('PDF siap ✓');
+  }
+}
+
+// ── TOAST ────────────────────────────────────
+let _tt=null;
+function toast(msg,isErr=false){
+  const t=document.getElementById('toast');
+  if(_tt)clearTimeout(_tt);
+  t.textContent=msg;
+  t.style.background=isErr?'#ef4444':'#0f172a';
+  t.style.opacity='1';
+  t.style.transform='translateX(-50%) translateY(0)';
+  _tt=setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateX(-50%) translateY(40px)'; },3500);
 }
 </script>
 </body>
