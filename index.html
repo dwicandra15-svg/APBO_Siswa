@@ -46,8 +46,9 @@ body {
 }
 
 /* ── SCREEN SYSTEM ── */
-.screen { display:none; min-height:100vh; }
-.screen.active { display:block; }
+.screen { display:none !important; min-height:100vh; }
+.screen.active { display:block !important; }
+#loginScreen.active { display:flex !important; }
 
 /* ════════════════════════════════
    LOGIN SCREEN
