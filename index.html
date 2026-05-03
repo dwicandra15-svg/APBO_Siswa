@@ -613,9 +613,18 @@ async function doLogin() {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Memverifikasi...';
 
+  // Timeout 10 detik jika Supabase tidak merespons (kemungkinan RLS block)
+  const timeoutId = setTimeout(() => {
+    if (btn.disabled) {
+      btn.disabled = false;
+      btn.innerHTML = 'Masuk →';
+      showErr('Koneksi timeout — kemungkinan akses database diblokir. Hubungi administrator.');
+    }
+  }, 10000);
+
   try {
     // Cari dengan nis exact match
-    let { data, error } = await db.from('siswa').select('*').eq('nis', nisn).limit(1);
+    let { data, error } = await db.from('siswa').select('id,nama,nis,kelas_id,jenis_kelamin,bimbingan').eq('nis', nisn).limit(1);
 
     // Jika tidak ketemu, coba tanpa awalan nol
     if ((!data || !data.length) && !error) {
@@ -637,11 +646,13 @@ async function doLogin() {
       throw new Error(`NISN "${nisn}" tidak ditemukan. Pastikan NISN sesuai data di sekolah.`);
     }
 
+    clearTimeout(timeoutId);
     SISWA = data[0];
     sessionStorage.setItem('apbo_siswa', JSON.stringify(SISWA));
     masukApp();
 
   } catch(e) {
+    clearTimeout(timeoutId);
     showErr(e.message || 'Gagal login');
     btn.disabled = false;
     btn.innerHTML = 'Masuk →';
@@ -652,7 +663,8 @@ function showErr(msg) {
   const el = document.getElementById('loginError');
   el.textContent = '⚠ ' + msg;
   el.style.display = 'block';
-  setTimeout(() => el.style.display = 'none', 4000);
+  el.style.cssText += ';white-space:pre-wrap;font-size:12px;line-height:1.5';
+  setTimeout(() => el.style.display = 'none', 6000);
 }
 
 function doLogout() {
