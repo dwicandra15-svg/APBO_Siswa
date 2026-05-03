@@ -255,47 +255,42 @@ tbody tr:last-child td{border-bottom:none}
 .notif-empty{text-align:center;padding:30px;color:var(--text3);font-size:13px}
 
 /* ══ CHAT ══ */
-#chatLayer { display:none; }
-#chatLayer.active { display:flex; }
 .chat-header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .chat-header h3{font-size:15px;font-weight:700}
 .chat-header p{font-size:11px;color:var(--text3);margin-top:2px}
-.chat-msgs{flex:1;overflow-y:auto;padding:12px 12px 8px;-webkit-overflow-scrolling:touch;background:var(--bg)}
-.chat-day{text-align:center;margin:10px 0;font-size:11px;color:var(--text3);font-weight:600;position:relative}
-.chat-day::before,.chat-day::after{content:'';position:absolute;top:50%;width:30%;height:1px;background:var(--border)}
-.chat-day::before{left:0}.chat-day::after{right:0}
+.chat-msgs{flex:1;overflow-y:auto;padding:12px;-webkit-overflow-scrolling:touch;background:var(--bg);min-height:0}
+.chat-day{text-align:center;margin:10px 0;font-size:11px;color:var(--text3);font-weight:600}
 
-/* BUBBLE */
-.bubble-wrap{display:flex;margin-bottom:10px;gap:8px;align-items:flex-end;width:100%;box-sizing:border-box}
-.bubble-wrap.me{flex-direction:row-reverse}
-.bubble-avatar{width:30px;height:30px;border-radius:50%;background:var(--primary-l);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--primary);flex-shrink:0}
-.bubble-wrap>div:last-child{flex:1;min-width:0;display:flex;flex-direction:column}
-.bubble-wrap.me>div:last-child{align-items:flex-end}
-.bubble-wrap.other>div:last-child{align-items:flex-start}
-.bubble{display:inline-block;max-width:min(72%,280px);min-width:40px;padding:10px 13px;border-radius:18px;font-size:13px;line-height:1.5;word-break:break-word;overflow-wrap:anywhere;white-space:pre-wrap;box-sizing:border-box}
-.bubble-wrap.me .bubble{background:var(--primary);color:#fff;border-radius:18px 4px 18px 18px}
-.bubble-wrap.other .bubble{background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:4px 18px 18px 18px}
-.bubble-meta{font-size:10px;margin-top:4px;opacity:.7;display:flex;align-items:center;gap:4px}
-.bubble-name{font-size:10px;font-weight:700;margin-bottom:3px;color:var(--text3)}
+/* BUBBLE — simple & robust */
+.bw{display:flex;align-items:flex-end;gap:8px;margin-bottom:12px;padding:0 4px}
+.bw.me{flex-direction:row-reverse}
+.bav{width:28px;height:28px;border-radius:50%;background:var(--primary-l);color:var(--primary);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.binner{display:flex;flex-direction:column;max-width:calc(100% - 80px)}
+.bw.me .binner{align-items:flex-end}
+.bw.other .binner{align-items:flex-start}
+.bname{font-size:10px;font-weight:700;color:var(--text3);margin-bottom:3px;padding:0 4px}
+.bb{padding:10px 14px;border-radius:16px;font-size:13px;line-height:1.55;word-break:break-word;overflow-wrap:break-word}
+.bw.me .bb{background:var(--primary);color:#fff;border-radius:16px 4px 16px 16px}
+.bw.other .bb{background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:4px 16px 16px 16px}
+.btime{font-size:10px;margin-top:5px;opacity:.6;padding:0 4px}
 
-/* FILE ATTACHMENT */
-.attach-box{background:rgba(255,255,255,.15);border-radius:10px;padding:8px 10px;margin-top:6px;display:flex;align-items:center;gap:8px;cursor:pointer}
-.bubble-wrap.other .attach-box{background:var(--bg);border:1px solid var(--border)}
-.attach-icon{font-size:20px;flex-shrink:0}
+/* FILE ATTACH */
+.attach-box{background:rgba(255,255,255,.15);border-radius:10px;padding:8px 10px;margin-top:8px;display:flex;align-items:center;gap:8px;cursor:pointer;min-width:160px}
+.bw.other .attach-box{background:var(--bg);border:1px solid var(--border)}
+.attach-icon{font-size:22px;flex-shrink:0}
 .attach-name{font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px}
 .attach-size{font-size:10px;opacity:.7}
-.attach-dl{font-size:18px;flex-shrink:0;opacity:.8}
 
 /* CHAT INPUT */
 .chat-input-bar{background:var(--surface);border-top:1px solid var(--border);padding:8px 12px;flex-shrink:0;padding-bottom:max(8px,env(safe-area-inset-bottom))}
 .chat-input-row{display:flex;align-items:flex-end;gap:8px}
 .chat-attach-btn{width:38px;height:38px;border-radius:10px;background:var(--bg);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;flex-shrink:0;transition:all .18s}
 .chat-attach-btn:hover{background:var(--primary-l);border-color:var(--primary)}
-.chat-tinput{flex:1;padding:9px 14px;border-radius:22px;border:1.5px solid var(--border);font-size:13px;outline:none;resize:none;max-height:100px;line-height:1.5;transition:all .2s;background:var(--bg)}
+.chat-tinput{flex:1;padding:9px 14px;border-radius:22px;border:1.5px solid var(--border);font-size:13px;outline:none;resize:none;max-height:100px;line-height:1.5;transition:all .2s;background:var(--bg);font-family:inherit}
 .chat-tinput:focus{border-color:var(--primary);background:var(--surface)}
 .chat-send-btn{width:38px;height:38px;border-radius:50%;background:var(--primary);border:none;color:#fff;font-size:18px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .18s}
 .chat-send-btn:hover{background:var(--primary-d);transform:scale(1.05)}
-.file-preview-bar{display:none;padding:8px 12px;border-top:1px solid var(--border);background:var(--bg);flex-wrap:wrap;gap:8px}
+.file-preview-bar{display:none;padding:6px 12px;border-top:1px solid var(--border);background:var(--bg);flex-wrap:wrap;gap:8px}
 .file-preview-bar.show{display:flex}
 .file-chip{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:11px;font-weight:600}
 .file-chip-rm{background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:0;line-height:1}
@@ -454,8 +449,8 @@ tbody tr:last-child td{border-bottom:none}
 
   </div><!-- /app-scroll -->
 
-  <!-- ── CHAT LAYER (full screen, di luar scroll) ── -->
-  <div id="chatLayer" style="display:none;position:fixed;inset:0;top:56px;bottom:var(--navbar-h);z-index:150;flex-direction:column;background:var(--bg)">
+  <!-- ── CHAT LAYER (full screen fixed) ── -->
+  <div id="chatLayer" style="display:none;position:fixed;left:0;right:0;top:56px;bottom:64px;z-index:150;flex-direction:column;background:#f8fafc">
     <div class="chat-header">
       <div>
         <h3>💬 Diskusi Kelas</h3>
@@ -820,41 +815,19 @@ function renderChatMsgs(msgs) {
 
   let html = '', lastDay = '';
   msgs.forEach(m => {
-    const isMe = m.nisn === (SISWA.nis||'');
+    const isMe  = String(m.nisn) === String(SISWA.nis||'') || String(m.siswa_id) === String(SISWA.id);
     const d = m.created_at ? new Date(m.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}) : '';
-    if (d !== lastDay) {
-      html += `<div class="chat-day">${d}</div>`;
-      lastDay = d;
-    }
-    const waktu = m.created_at ? new Date(m.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : '';
+    if (d !== lastDay) { html += `<div class="chat-day">${d}</div>`; lastDay = d; }
+    const waktu   = m.created_at ? new Date(m.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : '';
     const inisial = (m.nama||'?')[0].toUpperCase();
+    const fileHtml = buildFileHtml(m);
 
-    let fileHtml = '';
-    if (m.file_url) {
-      const ext = (m.file_url.split('.').pop()||'').toLowerCase();
-      const ico = ['jpg','jpeg','png','gif','webp'].includes(ext) ? '🖼️' :
-                  ['pdf'].includes(ext) ? '📄' :
-                  ['doc','docx'].includes(ext) ? '📝' :
-                  ['xls','xlsx'].includes(ext) ? '📊' : '📎';
-      fileHtml = `<div class="attach-box" onclick="downloadFile('${m.file_url}','${m.file_name||'file'}')">
-        <div class="attach-icon">${ico}</div>
-        <div style="flex:1;min-width:0">
-          <div class="attach-name">${m.file_name||'File'}</div>
-          <div class="attach-size">${m.file_size||''}</div>
-        </div>
-        <div class="attach-dl">⬇️</div>
-      </div>`;
-    }
-
-    html += `<div class="bubble-wrap ${isMe?'me':'other'}">
-      ${!isMe?`<div class="bubble-avatar">${inisial}</div>`:''}
-      <div>
-        ${!isMe?`<div class="bubble-name">${m.nama||'—'}</div>`:''}
-        <div class="bubble">
-          ${!isMe&&m.peran?`<span style="font-size:10px;opacity:.7;display:block;margin-bottom:3px">${m.peran}</span>`:''}
-          ${m.pesan||''}${fileHtml}
-          <div class="bubble-meta">${waktu}</div>
-        </div>
+    html += `<div class="bw ${isMe?'me':'other'}">
+      ${!isMe?`<div class="bav">${inisial}</div>`:''}
+      <div class="binner">
+        ${!isMe?`<div class="bname">${m.nama||'—'}${m.peran?' · <span style="font-weight:400">'+m.peran+'</span>':''}</div>`:''}
+        <div class="bb">${escHtml(m.pesan||'')}${fileHtml}</div>
+        <div class="btime">${waktu}</div>
       </div>
     </div>`;
   });
@@ -863,48 +836,44 @@ function renderChatMsgs(msgs) {
 }
 
 function subscribeChat() {
-  chatChannel = db.channel('chat_apbo_kelas_' + KELAS_ID)
-    .on('postgres_changes', { event:'INSERT', schema:'public', table:'chat_apbo', filter:`kelas_id=eq.${KELAS_ID}` }, payload => {
-      appendChatMsg(payload.new);
-      // Jika tidak di tab chat, tambah badge
-      if (!document.getElementById('bn-chat').classList.contains('active')) {
-        unreadChat++;
-        const badge = document.getElementById('chatBadge');
-        badge.textContent = unreadChat > 9 ? '9+' : unreadChat;
-        badge.classList.add('show');
+  if (chatChannel) { db.removeChannel(chatChannel); chatChannel = null; }
+  chatChannel = db.channel('chat_kelas_' + KELAS_ID)
+    .on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'chat_apbo',
+      filter: `kelas_id=eq.${KELAS_ID}`
+    }, payload => {
+      // Hanya append jika bukan milik sendiri (supaya tidak double — optimistic sudah append)
+      const isOwn = String(payload.new.siswa_id) === String(SISWA.id);
+      if (!isOwn) {
+        appendChatMsg(payload.new);
+        if (!document.getElementById('bn-chat').classList.contains('active')) {
+          unreadChat++;
+          const badge = document.getElementById('chatBadge');
+          badge.textContent = unreadChat > 9 ? '9+' : unreadChat;
+          badge.classList.add('show');
+        }
       }
     })
-    .subscribe();
+    .subscribe(status => {
+      if (status === 'SUBSCRIBED') console.log('Chat realtime aktif ✓');
+    });
 }
 
 function appendChatMsg(m) {
   const el = document.getElementById('chatMsgs');
   if (el.querySelector('.empty,.load-spin')) el.innerHTML = '';
-
-  const isMe  = String(m.nisn) === String(SISWA.nis||'') || String(m.siswa_id) === String(SISWA.id);
-  const waktu = m.created_at ? new Date(m.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : '';
+  const isMe    = String(m.nisn) === String(SISWA.nis||'') || String(m.siswa_id) === String(SISWA.id);
+  const waktu   = m.created_at ? new Date(m.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : '';
   const inisial = (m.nama||'?')[0].toUpperCase();
-
-  let fileHtml = '';
-  if (m.file_url) {
-    const ext = (m.file_name||'').split('.').pop().toLowerCase();
-    const ico = ['jpg','jpeg','png','gif','webp'].includes(ext)?'🖼️':['pdf'].includes(ext)?'📄':'📎';
-    fileHtml = `<div class="attach-box" onclick="downloadFile('${m.file_url}','${m.file_name||'file'}')">
-      <div class="attach-icon">${ico}</div>
-      <div style="flex:1;min-width:0"><div class="attach-name">${m.file_name||'File'}</div></div>
-      <div class="attach-dl">⬇️</div></div>`;
-  }
-
+  const fileHtml = buildFileHtml(m);
   const div = document.createElement('div');
-  div.className = 'bubble-wrap ' + (isMe?'me':'other');
+  div.className = 'bw ' + (isMe?'me':'other');
   div.innerHTML = `
-    ${!isMe?`<div class="bubble-avatar">${inisial}</div>`:''}
-    <div>
-      ${!isMe?`<div class="bubble-name">${m.nama||'—'}</div>`:''}
-      <div class="bubble">
-        ${m.pesan||''}${fileHtml}
-        <div class="bubble-meta">${waktu}</div>
-      </div>
+    ${!isMe?`<div class="bav">${inisial}</div>`:''}
+    <div class="binner">
+      ${!isMe?`<div class="bname">${m.nama||'—'}</div>`:''}
+      <div class="bb">${escHtml(m.pesan||'')}${fileHtml}</div>
+      <div class="btime">${waktu}</div>
     </div>`;
   el.appendChild(div);
   scrollChatBottom();
@@ -988,6 +957,25 @@ function autoResize(el) {
 }
 
 // ── HELPERS ──────────────────────────────────
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+function buildFileHtml(m) {
+  if (!m.file_url) return '';
+  const ext = (m.file_name||'').split('.').pop().toLowerCase();
+  const ico = ['jpg','jpeg','png','gif','webp'].includes(ext)?'🖼️':
+              ['pdf'].includes(ext)?'📄':
+              ['doc','docx'].includes(ext)?'📝':
+              ['xls','xlsx'].includes(ext)?'📊':'📎';
+  return `<div class="attach-box" onclick="downloadFile('${m.file_url}','${m.file_name||'file'}')">
+    <div class="attach-icon">${ico}</div>
+    <div style="flex:1;min-width:0">
+      <div class="attach-name">${m.file_name||'File'}</div>
+      <div class="attach-size">${m.file_size||''}</div>
+    </div>
+    <div style="font-size:18px;flex-shrink:0">⬇️</div>
+  </div>`;
+}
 function fileToBase64(file) {
   return new Promise((res,rej)=>{
     const r = new FileReader();
