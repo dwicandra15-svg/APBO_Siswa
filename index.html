@@ -835,6 +835,8 @@ function renderChatMsgs(msgs) {
   scrollChatBottom();
 }
 
+let sentMsgKeys = new Set(); // track pesan yang sudah di-append via optimistic
+
 function subscribeChat() {
   if (chatChannel) { db.removeChannel(chatChannel); chatChannel = null; }
   chatChannel = db.channel('chat_kelas_' + KELAS_ID)
@@ -842,10 +844,16 @@ function subscribeChat() {
       event: 'INSERT', schema: 'public', table: 'chat_apbo',
       filter: `kelas_id=eq.${KELAS_ID}`
     }, payload => {
-      // Hanya append jika bukan milik sendiri (supaya tidak double — optimistic sudah append)
-      const isOwn = String(payload.new.siswa_id) === String(SISWA.id);
-      if (!isOwn) {
-        appendChatMsg(payload.new);
+      const m = payload.new;
+      // Skip jika pesan ini milik kita DAN sudah di-append via optimistic
+      const key = String(m.siswa_id) + '_' + String(m.pesan||'').substring(0,20);
+      if (sentMsgKeys.has(key)) {
+        sentMsgKeys.delete(key); // hapus dari set setelah skip sekali
+        return;
+      }
+      // Pesan dari orang lain — append
+      if (String(m.siswa_id) !== String(SISWA.id)) {
+        appendChatMsg(m);
         if (!document.getElementById('bn-chat').classList.contains('active')) {
           unreadChat++;
           const badge = document.getElementById('chatBadge');
@@ -915,12 +923,17 @@ async function sendChat() {
     created_at: now
   };
 
-  // ── Optimistic: langsung tampilkan bubble tanpa tunggu DB ──
+  // ── Optimistic: langsung tampilkan bubble ──
+  const msgKey = String(SISWA.id) + '_' + String(row.pesan||'').substring(0,20);
+  sentMsgKeys.add(msgKey);
   appendChatMsg(row);
 
-  // Simpan ke Supabase di background
+  // Simpan ke Supabase
   const { error } = await db.from('chat_apbo').insert({...row, created_at: undefined});
-  if (error) toast('Gagal kirim: '+error.message, true);
+  if (error) {
+    toast('Gagal kirim: '+error.message, true);
+    sentMsgKeys.delete(msgKey);
+  }
 }
 
 function onFileSelected(input) {
