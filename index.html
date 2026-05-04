@@ -311,6 +311,10 @@ tbody tr:last-child td{border-bottom:none}
   .bottom-nav{max-width:480px;left:50%;transform:translateX(-50%);border-radius:20px 20px 0 0;border-left:1px solid var(--border);border-right:1px solid var(--border)}
   #appScreen{max-width:480px;margin:0 auto;box-shadow:0 0 40px rgba(0,0,0,.1)}
 }
+
+.bav.guru{background:#fef9c3;color:#854d0e}
+.bw.from-guru .bb{background:#fffbeb;border:1px solid #fde68a}
+.bw.pengumuman .bb{background:#f0fdf4;border:1px solid #86efac;border-left:4px solid #16a34a}
 </style>
 </head>
 <body>
@@ -822,11 +826,15 @@ function renderChatMsgs(msgs) {
     const inisial = (m.nama||'?')[0].toUpperCase();
     const fileHtml = buildFileHtml(m);
 
-    html += `<div class="bw ${isMe?'me':'other'}">
-      ${!isMe?`<div class="bav">${inisial}</div>`:''}
+    const isPengum = m.tipe === 'pengumuman';
+    const isGuru   = m.peran === 'Guru';
+    const extraCls = isPengum ? ' pengumuman' : isGuru ? ' from-guru' : '';
+    const pengumBadge = isPengum ? '<div style="font-size:10px;font-weight:700;color:#16a34a;margin-bottom:4px">📢 Pengumuman</div>' : '';
+    html += `<div class="bw ${isMe?'me':'other'}${extraCls}">
+      ${!isMe?`<div class="bav ${isGuru?'guru':''}"> ${inisial}</div>`:''}
       <div class="binner">
         ${!isMe?`<div class="bname">${m.nama||'—'}${m.peran?' · <span style="font-weight:400">'+m.peran+'</span>':''}</div>`:''}
-        <div class="bb">${escHtml(m.pesan||'')}${fileHtml}</div>
+        <div class="bb">${pengumBadge}${escHtml(m.pesan||'')}${fileHtml}</div>
         <div class="btime">${waktu}</div>
       </div>
     </div>`;
@@ -851,8 +859,10 @@ function subscribeChat() {
         sentMsgKeys.delete(key); // hapus dari set setelah skip sekali
         return;
       }
-      // Pesan dari orang lain — append
-      if (String(m.siswa_id) !== String(SISWA.id)) {
+      // Pesan dari orang lain (siswa lain, atau guru) — append
+      const bukan_saya = String(m.siswa_id) !== String(SISWA.id);
+      const dari_guru  = m.peran === 'Guru';
+      if (bukan_saya || dari_guru) {
         appendChatMsg(m);
         if (!document.getElementById('bn-chat').classList.contains('active')) {
           unreadChat++;
@@ -871,16 +881,20 @@ function appendChatMsg(m) {
   const el = document.getElementById('chatMsgs');
   if (el.querySelector('.empty,.load-spin')) el.innerHTML = '';
   const isMe    = String(m.nisn) === String(SISWA.nis||'') || String(m.siswa_id) === String(SISWA.id);
-  const waktu   = m.created_at ? new Date(m.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : '';
+  const isPengum2 = m.tipe === 'pengumuman';
+  const isGuru2  = m.peran === 'Guru';
+  const waktu   = m.created_at ? new Date(m.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
   const inisial = (m.nama||'?')[0].toUpperCase();
   const fileHtml = buildFileHtml(m);
+  const extraCls2 = isPengum2 ? ' pengumuman' : isGuru2 ? ' from-guru' : '';
+  const pengumBadge2 = isPengum2 ? '<div style="font-size:10px;font-weight:700;color:#16a34a;margin-bottom:4px">📢 Pengumuman</div>' : '';
   const div = document.createElement('div');
-  div.className = 'bw ' + (isMe?'me':'other');
+  div.className = 'bw ' + (isMe?'me':'other') + extraCls2;
   div.innerHTML = `
-    ${!isMe?`<div class="bav">${inisial}</div>`:''}
+    ${!isMe?`<div class="bav ${isGuru2?'guru':''}"> ${inisial}</div>`:''}
     <div class="binner">
-      ${!isMe?`<div class="bname">${m.nama||'—'}</div>`:''}
-      <div class="bb">${escHtml(m.pesan||'')}${fileHtml}</div>
+      ${!isMe?`<div class="bname">${m.nama||'—'}${m.peran?' · <span style="font-weight:400">'+m.peran+'</span>':''}</div>`:''}
+      <div class="bb">${pengumBadge2}${escHtml(m.pesan||'')}${fileHtml}</div>
       <div class="btime">${waktu}</div>
     </div>`;
   el.appendChild(div);
@@ -910,16 +924,18 @@ async function sendChat() {
   }
 
   const now = new Date().toISOString();
+  const kelasNamaSiswa = getNamaKelas(KELAS_ID);
   const row = {
-    kelas_id : KELAS_ID,
-    siswa_id : SISWA.id,
-    nisn     : SISWA.nis || '',
-    nama     : SISWA.nama || 'Siswa',
-    peran    : 'Siswa',
-    pesan    : pesan || (fileName ? '[File: '+fileName+']' : ''),
-    file_url : fileUrl,
-    file_name: fileName,
-    file_size: fileSize,
+    kelas_id  : KELAS_ID,
+    kelas_nama: kelasNamaSiswa,
+    siswa_id  : SISWA.id,
+    nisn      : SISWA.nis || '',
+    nama      : SISWA.nama || 'Siswa',
+    peran     : 'Siswa',
+    pesan     : pesan || (fileName ? '[File: '+fileName+']' : ''),
+    file_url  : fileUrl,
+    file_name : fileName,
+    file_size : fileSize,
     created_at: now
   };
 
