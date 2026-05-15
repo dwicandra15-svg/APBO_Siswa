@@ -551,9 +551,14 @@ async function doLogin() {
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner"></div> Memverifikasi...';
   try {
-    let { data, error } = await db.from('siswa').select('*').eq('nis', nisn).limit(1);
+    // Query siswa + nama kelas sekaligus via join
+    let { data, error } = await db.from('siswa')
+      .select('*, kelas:kelas_id(nama)')
+      .eq('nis', nisn).limit(1);
     if ((!data||!data.length) && !error) {
-      const r = await db.from('siswa').select('*').eq('nis', nisn.replace(/^0+/,'')).limit(1);
+      const r = await db.from('siswa')
+        .select('*, kelas:kelas_id(nama)')
+        .eq('nis', nisn.replace(/^0+/,'')).limit(1);
       data = r.data; error = r.error;
     }
     if (error) throw new Error(error.message);
@@ -595,8 +600,18 @@ async function masukApp() {
   document.getElementById('pbName').textContent = SISWA.nama||'Siswa';
   document.getElementById('pbNisn').textContent = 'NISN: '+(SISWA.nis||'—');
   KELAS_ID = SISWA.kelas_id;
+  // Ambil nama kelas dari join data (tersedia dari login query)
+  const kelasNamaFromJoin = SISWA.kelas?.nama || '';
+  if (kelasNamaFromJoin) {
+    // Simpan ke ALL_KELAS agar getNamaKelas bisa bekerja
+    ALL_KELAS = [{ id: KELAS_ID, nama: kelasNamaFromJoin }];
+  }
   await loadMaster();
-  document.getElementById('pbKelas').textContent = getNamaKelas(KELAS_ID);
+  // Pastikan nama kelas tetap benar meski loadMaster gagal
+  const namaKelasDisplay = getNamaKelas(KELAS_ID) !== '—'
+    ? getNamaKelas(KELAS_ID)
+    : kelasNamaFromJoin || '—';
+  document.getElementById('pbKelas').textContent = namaKelasDisplay;
   // Load semua data paralel
   await Promise.all([
     loadAbsensiSummary(), loadNilaiRingkasan(),
@@ -608,11 +623,14 @@ async function masukApp() {
 
 // ── MASTER DATA ───────────────────────────────
 async function loadMaster() {
+  const kelasBefore = [...ALL_KELAS]; // simpan data kelas dari join login
   const [{ data: k }, { data: m }] = await Promise.all([
     db.from('kelas').select('*').order('nama'),
     db.from('mapel').select('*').order('nama')
   ]);
-  ALL_KELAS = k||[]; ALL_MAPEL = m||[];
+  // Jika kelas berhasil diambil, gunakan; jika tidak, pakai data join login
+  ALL_KELAS = (k && k.length) ? k : kelasBefore;
+  ALL_MAPEL = m||[];
   const sel = document.getElementById('filterMapel');
   sel.innerHTML = '<option value="">Semua Mata Pelajaran</option>'
     + ALL_MAPEL.map(m=>`<option value="${m.id}">${m.nama}</option>`).join('');
@@ -955,7 +973,10 @@ async function sendChat() {
   }
 
   const now = new Date().toISOString();
-  const kelasNamaSiswa = getNamaKelas(KELAS_ID);
+  // Ambil nama kelas — dari ALL_KELAS atau langsung dari SISWA.kelas (join)
+  const kelasNamaSiswa = getNamaKelas(KELAS_ID) !== '—'
+    ? getNamaKelas(KELAS_ID)
+    : (SISWA.kelas?.nama || '');
 
   // ── Tambah tag kelas otomatis di depan pesan siswa ──
   // Format: "[9B] halo sir malam"
