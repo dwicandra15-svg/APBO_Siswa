@@ -315,6 +315,24 @@ tbody tr:last-child td{border-bottom:none}
 .bav.guru{background:#fef9c3;color:#854d0e}
 .bw.from-guru .bb{background:#fffbeb;border:1px solid #fde68a}
 .bw.pengumuman .bb{background:#f0fdf4;border:1px solid #86efac;border-left:4px solid #16a34a}
+
+/* ── Tag Kelas di Chat [9B] ── */
+.kelas-tag {
+  display: inline-block;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 99px;
+  margin-right: 3px;
+  letter-spacing: 0.3px;
+  vertical-align: middle;
+}
+.me .kelas-tag {
+  background: rgba(255,255,255,0.25);
+  color: #fff;
+}
 </style>
 </head>
 <body>
@@ -834,7 +852,7 @@ function renderChatMsgs(msgs) {
       ${!isMe?`<div class="bav ${isGuru?'guru':''}"> ${inisial}</div>`:''}
       <div class="binner">
         ${!isMe?`<div class="bname">${m.nama||'—'}${m.peran?' · <span style="font-weight:400">'+m.peran+'</span>':''}</div>`:''}
-        <div class="bb">${pengumBadge}${escHtml(m.pesan||'')}${fileHtml}</div>
+        <div class="bb">${pengumBadge}${formatPesanKelas(m.pesan||'')}${fileHtml}</div>
         <div class="btime">${waktu}</div>
       </div>
     </div>`;
@@ -894,7 +912,7 @@ function appendChatMsg(m) {
     ${!isMe?`<div class="bav ${isGuru2?'guru':''}"> ${inisial}</div>`:''}
     <div class="binner">
       ${!isMe?`<div class="bname">${m.nama||'—'}${m.peran?' · <span style="font-weight:400">'+m.peran+'</span>':''}</div>`:''}
-      <div class="bb">${pengumBadge2}${escHtml(m.pesan||'')}${fileHtml}</div>
+      <div class="bb">${pengumBadge2}${formatPesanKelas(m.pesan||'')}${fileHtml}</div>
       <div class="btime">${waktu}</div>
     </div>`;
   el.appendChild(div);
@@ -904,6 +922,19 @@ function appendChatMsg(m) {
 function scrollChatBottom() {
   const el = document.getElementById('chatMsgs');
   el.scrollTop = el.scrollHeight;
+}
+
+// ── Format pesan: tag kelas [9B] diberi style khusus ──────────
+function formatPesanKelas(pesan) {
+  if (!pesan) return '';
+  // Deteksi tag kelas di awal pesan: [7A], [8B], [9C] dll
+  const tagMatch = pesan.match(/^(\[[0-9]{1}[A-Za-z]{1,2}\])\s*/);
+  if (tagMatch) {
+    const tag  = tagMatch[1]; // "[9B]"
+    const rest = pesan.slice(tagMatch[0].length); // sisa pesan
+    return `<span class="kelas-tag">${escHtml(tag)}</span> ${escHtml(rest)}`;
+  }
+  return escHtml(pesan);
 }
 
 async function sendChat() {
@@ -925,6 +956,13 @@ async function sendChat() {
 
   const now = new Date().toISOString();
   const kelasNamaSiswa = getNamaKelas(KELAS_ID);
+
+  // ── Tambah tag kelas otomatis di depan pesan siswa ──
+  // Format: "[9B] halo sir malam"
+  // Guru di APEL JUMBO bisa langsung tahu dari kelas mana
+  const kelasTag = kelasNamaSiswa ? `[${kelasNamaSiswa}] ` : '';
+  const pesanDenganKelas = pesan ? kelasTag + pesan : '';
+
   const row = {
     kelas_id  : KELAS_ID,
     kelas_nama: kelasNamaSiswa,
@@ -932,7 +970,7 @@ async function sendChat() {
     nisn      : SISWA.nis || '',
     nama      : SISWA.nama || 'Siswa',
     peran     : 'Siswa',
-    pesan     : pesan || (fileName ? '[File: '+fileName+']' : ''),
+    pesan     : pesanDenganKelas || (fileName ? `[${kelasNamaSiswa}] [File: `+fileName+']' : ''),
     file_url  : fileUrl,
     file_name : fileName,
     file_size : fileSize,
