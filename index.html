@@ -774,26 +774,62 @@ function renderCatatan(b) {
 //  NOTIFIKASI
 // ══════════════════════════════════════════════
 async function loadNotif() {
-  // Baca pengumuman dari tabel app_settings key 'pengumuman'
+  NOTIFS = [];
+
+  // 1. Pengumuman dari app_settings
   try {
     const { data } = await db.from('app_settings').select('value').eq('key','pengumuman').maybeSingle();
-    if (data&&data.value) {
+    if (data && data.value) {
       try {
-        const list = typeof data.value==='string' ? JSON.parse(data.value) : data.value;
-        NOTIFS = Array.isArray(list) ? list : [];
+        const list = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+        const arr = Array.isArray(list) ? list : [];
+        arr.forEach(n => NOTIFS.push({ id:'p'+n.id, judul:'📢 Pengumuman', isi:n.isi||n.judul||'', waktu:n.waktu||'', dibaca:false }));
       } catch(e) {
-        // Jika value adalah string biasa, buat satu notif
-        NOTIFS = [{ id:1, judul:'Pengumuman', isi:data.value, waktu:new Date().toLocaleString('id-ID'), dibaca:false }];
+        NOTIFS.push({ id:'p1', judul:'📢 Pengumuman', isi:data.value, waktu:new Date().toLocaleString('id-ID'), dibaca:false });
       }
     }
   } catch(e) {}
 
-  // Juga cek bimbingan terbaru sebagai notif
-  const { data: baru } = await db.from('bimbingan').select('*')
-    .eq('siswa_id',SISWA.id).order('created_at',{ascending:false}).limit(3);
-  (baru||[]).forEach(b=>{
-    NOTIFS.unshift({ id:'b'+b.id, judul:'Catatan Guru', isi:b.masalah||'Ada catatan baru dari guru', waktu:b.tanggal||'', dibaca:false });
-  });
+  // 2. Catatan/bimbingan terbaru (max 5)
+  try {
+    const { data: bimbArr } = await db.from('bimbingan').select('*')
+      .eq('siswa_id', SISWA.id).order('created_at', {ascending:false}).limit(5);
+    (bimbArr||[]).forEach(b => {
+      NOTIFS.push({ id:'b'+b.id, judul:'⚠️ Catatan Guru', isi:b.masalah||'Ada catatan baru dari guru', waktu:b.tanggal||'', dibaca:false });
+    });
+  } catch(e) {}
+
+  // 3. Absensi Alpha terbaru (max 5)
+  try {
+    const { data: absArr } = await db.from('absensi').select('*')
+      .eq('siswa_id', SISWA.id).eq('status','A')
+      .order('tanggal',{ascending:false}).limit(5);
+    (absArr||[]).forEach(a => {
+      NOTIFS.push({ id:'a'+a.id, judul:'🔴 Alpha Tidak Hadir', isi:`Tercatat tidak hadir (Alpha) pada tanggal ${a.tanggal||'-'}`, waktu:a.tanggal||'', dibaca:false });
+    });
+  } catch(e) {}
+
+  // 4. Nilai terbaru (max 5)
+  try {
+    const { data: nilArr } = await db.from('nilai').select('*')
+      .eq('siswa_id', SISWA.id)
+      .order('created_at',{ascending:false}).limit(5);
+    (nilArr||[]).forEach(n => {
+      const mapelNama = getNamaMapel(n.mapel_id);
+      NOTIFS.push({ id:'n'+n.id, judul:'📝 Nilai Baru', isi:`Nilai ${n.kategori||''} ${mapelNama}: ${n.skor}`, waktu:'', dibaca:false });
+    });
+  } catch(e) {}
+
+  // 5. Pesan chat terbaru dari guru (max 5)
+  try {
+    const { data: chatArr } = await db.from('chat_apbo').select('*')
+      .eq('kelas_id', KELAS_ID).eq('peran','Guru')
+      .order('created_at',{ascending:false}).limit(5);
+    (chatArr||[]).forEach(c => {
+      const waktu = c.created_at ? new Date(c.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : '';
+      NOTIFS.push({ id:'c'+c.id, judul:'💬 Pesan Guru', isi:c.pesan||'Ada pesan baru dari guru', waktu:waktu, dibaca:false });
+    });
+  } catch(e) {}
 
   renderNotif();
 }
@@ -930,6 +966,12 @@ function subscribeChat() {
           const badge = document.getElementById('chatBadge');
           badge.textContent = unreadChat > 9 ? '9+' : unreadChat;
           badge.classList.add('show');
+        }
+        // Tambahkan ke panel notifikasi lonceng jika pesan dari guru
+        if (dari_guru) {
+          const waktu = m.created_at ? new Date(m.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : '';
+          NOTIFS.unshift({ id:'c'+Date.now(), judul:'💬 Pesan Guru', isi:m.pesan||'Ada pesan baru dari guru', waktu:waktu, dibaca:false });
+          renderNotif();
         }
       }
     })
