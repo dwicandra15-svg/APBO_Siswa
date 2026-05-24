@@ -826,6 +826,27 @@ function closeNotifPanel() { document.getElementById('notifOverlay').classList.r
 // ══════════════════════════════════════════════
 //  CHAT / DISKUSI
 // ══════════════════════════════════════════════
+// ── Helper: cek apakah pesan boleh dilihat siswa ini ──────────
+function bolehLihatPesan(msg) {
+  // Pesan dari siswa/ortu → selalu tampil
+  if (msg.peran !== 'Guru') return true;
+  // Pesan guru dengan tipe normal/pengumuman → tampil ke semua
+  if (!msg.tipe || msg.tipe === 'pesan' || msg.tipe === 'pengumuman') return true;
+  // Pesan privat → cek apakah NISN siswa ini ada di target
+  if (msg.tipe === 'privat') {
+    if (!msg.target_siswa_ids) return false;
+    try {
+      const target = JSON.parse(msg.target_siswa_ids);
+      const myNisn = SISWA?.nis || '';
+      const myId   = SISWA?.id;
+      // Cek via NISN atau ID
+      return (target.nisns && target.nisns.includes(myNisn)) ||
+             (target.ids   && target.ids.includes(myId));
+    } catch(e) { return false; }
+  }
+  return true;
+}
+
 async function loadChat() {
   const el = document.getElementById('chatMsgs');
   el.innerHTML = '<div class="load-spin"></div>';
@@ -848,6 +869,8 @@ async function loadChat() {
 
 function renderChatMsgs(msgs) {
   const el = document.getElementById('chatMsgs');
+  // Filter: siswa hanya lihat pesan yang boleh mereka lihat
+  msgs = msgs.filter(m => bolehLihatPesan(m));
   if (!msgs.length) {
     el.innerHTML = '<div class="empty"><div class="ei">💬</div><h3>Belum ada pesan</h3><p>Mulai diskusi dengan mengirim pesan</p></div>';
     return;
@@ -898,6 +921,8 @@ function subscribeChat() {
       // Pesan dari orang lain (siswa lain, atau guru) — append
       const bukan_saya = String(m.siswa_id) !== String(SISWA.id);
       const dari_guru  = m.peran === 'Guru';
+      // Filter privat: jangan tampilkan jika tidak boleh dilihat
+      if (!bolehLihatPesan(m)) return;
       if (bukan_saya || dari_guru) {
         appendChatMsg(m);
         if (!document.getElementById('bn-chat').classList.contains('active')) {
