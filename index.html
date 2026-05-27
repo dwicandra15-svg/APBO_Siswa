@@ -333,6 +333,19 @@ tbody tr:last-child td{border-bottom:none}
   background: rgba(255,255,255,0.25);
   color: #fff;
 }
+/* ── KALENDER SISWA ── */
+.kal-s-filter{background:var(--surface);border:1.5px solid var(--border);border-radius:20px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;color:var(--text2);transition:all .15s}
+.kal-s-filter.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.kal-s-day{aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:4px 2px;position:relative;min-height:34px}
+.kal-s-day.today{background:var(--primary);border-radius:8px}
+.kal-s-day.today .kal-s-num{color:#fff;font-weight:800}
+.kal-s-day.other{opacity:.3}
+.kal-s-num{font-size:12px;font-weight:600;color:var(--text);line-height:1.4}
+.kal-s-dots{display:flex;gap:2px;flex-wrap:wrap;justify-content:center;margin-top:2px}
+.kal-s-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.kal-s-event{background:var(--surface);border-radius:12px;padding:12px 14px;margin-bottom:10px;box-shadow:var(--shadow);border-left:4px solid #1a56db}
+.kal-s-badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;margin-bottom:4px}
+.kal-s-empty{text-align:center;padding:40px 20px;color:var(--text2)}
 </style>
 </head>
 <body>
@@ -469,6 +482,49 @@ tbody tr:last-child td{border-bottom:none}
       </div>
     </div>
 
+    <!-- ── KALENDER ── -->
+    <div id="sec-kalender" class="page-sec" style="padding:0 12px 80px">
+
+      <!-- Navigasi Bulan -->
+      <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border-radius:14px;padding:12px 16px;margin-bottom:12px;box-shadow:var(--shadow)">
+        <button onclick="kalPrev()" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:16px;color:var(--text)">‹</button>
+        <div style="text-align:center">
+          <div id="kalBulanLabel" style="font-size:16px;font-weight:800;color:var(--text)"></div>
+          <div id="kalHariIni" style="font-size:11px;color:var(--text2);margin-top:2px"></div>
+        </div>
+        <button onclick="kalNext()" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:16px;color:var(--text)">›</button>
+      </div>
+
+      <!-- Grid Kalender -->
+      <div style="background:var(--surface);border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:var(--shadow)">
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:8px">
+          <div style="text-align:center;font-size:11px;font-weight:700;color:#e02424;padding:4px">Min</div>
+          <div style="text-align:center;font-size:11px;font-weight:700;color:var(--text2);padding:4px">Sen</div>
+          <div style="text-align:center;font-size:11px;font-weight:700;color:var(--text2);padding:4px">Sel</div>
+          <div style="text-align:center;font-size:11px;font-weight:700;color:var(--text2);padding:4px">Rab</div>
+          <div style="text-align:center;font-size:11px;font-weight:700;color:var(--text2);padding:4px">Kam</div>
+          <div style="text-align:center;font-size:11px;font-weight:700;color:var(--text2);padding:4px">Jum</div>
+          <div style="text-align:center;font-size:11px;font-weight:700;color:#1a56db;padding:4px">Sab</div>
+        </div>
+        <div id="kalGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px"></div>
+      </div>
+
+      <!-- Filter -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="kalFilterWrap">
+        <button class="kal-s-filter active" data-kat="semua" onclick="kalFilter('semua',this)">🔍 Semua</button>
+        <button class="kal-s-filter" data-kat="Ulangan" onclick="kalFilter('Ulangan',this)">📝 Ulangan</button>
+        <button class="kal-s-filter" data-kat="Ujian" onclick="kalFilter('Ujian',this)">🎓 Ujian</button>
+        <button class="kal-s-filter" data-kat="Class Meeting" onclick="kalFilter('Class Meeting',this)">🏆 Class Meeting</button>
+        <button class="kal-s-filter" data-kat="Libur" onclick="kalFilter('Libur',this)">🏖️ Libur</button>
+        <button class="kal-s-filter" data-kat="Kegiatan" onclick="kalFilter('Kegiatan',this)">🎉 Kegiatan</button>
+        <button class="kal-s-filter" data-kat="Lainnya" onclick="kalFilter('Lainnya',this)">📌 Lainnya</button>
+      </div>
+
+      <!-- Daftar Event -->
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">📋 Event Bulan Ini</div>
+      <div id="kalEventList"></div>
+    </div>
+
   </div><!-- /app-scroll -->
 
   <!-- ── CHAT LAYER (full screen fixed) ── -->
@@ -509,6 +565,10 @@ tbody tr:last-child td{border-bottom:none}
     <div class="bn-item" onclick="goTab('catatan')" id="bn-catatan">
       <div class="bn-icon">📋</div>
       <div class="bn-label">Catatan</div>
+    </div>
+    <div class="bn-item" onclick="goTab('kalender')" id="bn-kalender">
+      <div class="bn-icon">📆</div>
+      <div class="bn-label">Kalender</div>
     </div>
     <div class="bn-item" onclick="goTab('chat')" id="bn-chat">
       <div class="bn-icon">💬<div class="bn-badge" id="chatBadge"></div></div>
@@ -648,7 +708,6 @@ function goTab(tab) {
   const banner    = document.querySelector('.profile-banner');
 
   if (tab === 'chat') {
-    // Sembunyikan konten scroll, tampilkan chat layer
     chatLayer.style.display = 'flex';
     if (banner) banner.style.display = 'none';
     document.getElementById('appScroll').style.overflow = 'hidden';
@@ -657,11 +716,11 @@ function goTab(tab) {
     document.getElementById('chatBadge').textContent = '';
     setTimeout(scrollChatBottom, 100);
   } else {
-    // Sembunyikan chat layer, tampilkan konten normal
     chatLayer.style.display = 'none';
     if (banner) banner.style.display = '';
     document.getElementById('appScroll').style.overflow = 'auto';
     document.getElementById('sec-' + tab).classList.add('active');
+    if (tab === 'kalender') kalLoad();
   }
 }
 
@@ -1243,6 +1302,92 @@ function toast(msg,isErr=false){
   t.style.transform='translateX(-50%) translateY(0)';
   _tt=setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateX(-50%) translateY(40px)'; },3500);
 }
+
+// ══════════════════════════════════════════════
+//  KALENDER PENDIDIKAN (read-only untuk siswa)
+// ══════════════════════════════════════════════
+const KAL_S = {
+  tahun: new Date().getFullYear(),
+  bulan: new Date().getMonth(),
+  data: [],
+  kat: 'semua',
+};
+const KAL_BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+const KAL_KAT_W = {
+  'Ulangan':'#1a56db','Ujian':'#e02424','Class Meeting':'#10b981',
+  'Rapat':'#f59e0b','Libur':'#64748b','Kegiatan':'#ec4899','Lainnya':'#8b5cf6'
+};
+
+async function kalLoad() {
+  if (!db) return;
+  const { data } = await db.from('agenda_sekolah').select('*').order('tanggal_mulai');
+  KAL_S.data = data || [];
+  kalRender();
+}
+
+function kalRender() {
+  const today = new Date();
+  document.getElementById('kalBulanLabel').textContent = `${KAL_BULAN[KAL_S.bulan]} ${KAL_S.tahun}`;
+  document.getElementById('kalHariIni').textContent = `Hari ini: ${today.getDate()} ${KAL_BULAN[today.getMonth()]} ${today.getFullYear()}`;
+
+  const firstDay = new Date(KAL_S.tahun, KAL_S.bulan, 1).getDay();
+  const daysInMonth = new Date(KAL_S.tahun, KAL_S.bulan+1, 0).getDate();
+  const daysInPrev = new Date(KAL_S.tahun, KAL_S.bulan, 0).getDate();
+
+  let html = '';
+  for (let i = firstDay-1; i >= 0; i--)
+    html += `<div class="kal-s-day other"><div class="kal-s-num">${daysInPrev-i}</div></div>`;
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${KAL_S.tahun}-${String(KAL_S.bulan+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = today.getFullYear()===KAL_S.tahun && today.getMonth()===KAL_S.bulan && today.getDate()===d;
+    const evs = KAL_S.data.filter(e => ds >= e.tanggal_mulai && ds <= (e.tanggal_selesai||e.tanggal_mulai));
+    const dots = evs.slice(0,3).map(e=>`<div class="kal-s-dot" style="background:${e.warna||'#1a56db'}"></div>`).join('');
+    html += `<div class="kal-s-day ${isToday?'today':''}">
+      <div class="kal-s-num">${d}</div>
+      <div class="kal-s-dots">${dots}</div>
+    </div>`;
+  }
+  const total = firstDay + daysInMonth;
+  const pad = total%7===0 ? 0 : 7-(total%7);
+  for (let i=1;i<=pad;i++) html+=`<div class="kal-s-day other"><div class="kal-s-num">${i}</div></div>`;
+  document.getElementById('kalGrid').innerHTML = html;
+  kalRenderList();
+}
+
+function kalRenderList() {
+  const el = document.getElementById('kalEventList');
+  const tgl1 = `${KAL_S.tahun}-${String(KAL_S.bulan+1).padStart(2,'0')}-01`;
+  const tglN = new Date(KAL_S.tahun, KAL_S.bulan+1, 0);
+  const tglEnd = `${KAL_S.tahun}-${String(KAL_S.bulan+1).padStart(2,'0')}-${String(tglN.getDate()).padStart(2,'0')}`;
+  let list = KAL_S.data.filter(e => e.tanggal_mulai <= tglEnd && (e.tanggal_selesai||e.tanggal_mulai) >= tgl1);
+  if (KAL_S.kat !== 'semua') list = list.filter(e => e.kategori === KAL_S.kat);
+  if (!list.length) {
+    el.innerHTML = `<div class="kal-s-empty">📭<br><b>Tidak ada event</b><br><small>Belum ada agenda bulan ini</small></div>`;
+    return;
+  }
+  el.innerHTML = list.map(e => {
+    const w = e.warna || KAL_KAT_W[e.kategori] || '#1a56db';
+    const tgl = e.tanggal_selesai && e.tanggal_selesai!==e.tanggal_mulai
+      ? `${kalFmtTgl(e.tanggal_mulai)} — ${kalFmtTgl(e.tanggal_selesai)}`
+      : kalFmtTgl(e.tanggal_mulai);
+    return `<div class="kal-s-event" style="border-left-color:${w}">
+      <div><span class="kal-s-badge" style="background:${w}22;color:${w}">${e.kategori||'Lainnya'}</span></div>
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:3px">${e.judul}</div>
+      <div style="font-size:11px;color:var(--text2)">📅 ${tgl}</div>
+      ${e.deskripsi?`<div style="font-size:12px;color:var(--text2);margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">${e.deskripsi}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function kalFmtTgl(str) {
+  if (!str) return '-';
+  const d = new Date(str+'T00:00:00');
+  return `${d.getDate()} ${KAL_BULAN[d.getMonth()]} ${d.getFullYear()}`;
+}
+function kalPrev(){ if(KAL_S.bulan===0){KAL_S.bulan=11;KAL_S.tahun--;}else KAL_S.bulan--; kalRender(); }
+function kalNext(){ if(KAL_S.bulan===11){KAL_S.bulan=0;KAL_S.tahun++;}else KAL_S.bulan++; kalRender(); }
+function kalFilter(kat,btn){ KAL_S.kat=kat; document.querySelectorAll('.kal-s-filter').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); kalRenderList(); }
 </script>
 </body>
 </html>
