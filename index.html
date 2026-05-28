@@ -1645,8 +1645,8 @@ async function ortuKirimIzin() {
   const tglMulai = document.getElementById('izinTglMulai').value;
   const tglSelesai = document.getElementById('izinTglSelesai').value || tglMulai;
   const alasan = document.getElementById('izinAlasan').value.trim();
-  if (!tglMulai) { showToast('Tanggal tidak masuk wajib diisi','error'); return; }
-  if (!alasan) { showToast('Alasan/keterangan wajib diisi','error'); return; }
+  if (!tglMulai) { toast('Tanggal tidak masuk wajib diisi',true); return; }
+  if (!alasan) { toast('Alasan/keterangan wajib diisi',true); return; }
 
   const { error } = await db.from('izin_siswa').insert({
     siswa_id: s.id,
@@ -1658,11 +1658,11 @@ async function ortuKirimIzin() {
     alasan,
     status: 'menunggu'
   });
-  if (error) { showToast('Gagal kirim: '+error.message,'error'); return; }
+  if (error) { toast('Gagal kirim: '+error.message, true); return; }
   document.getElementById('izinTglMulai').value = '';
   document.getElementById('izinTglSelesai').value = '';
   document.getElementById('izinAlasan').value = '';
-  showToast('✅ Surat izin berhasil dikirim ke guru!','success');
+  toast('✅ Surat izin berhasil dikirim ke guru!',false);
   ortuLoadIzin();
 }
 
@@ -1803,12 +1803,12 @@ function ortuGantiPassword() {
 async function ortuSimpanPassword() {
   const baru=document.getElementById('ortuPassBaru').value.trim();
   const konfirm=document.getElementById('ortuPassKonfirm').value.trim();
-  if (!baru||baru.length<6){showToast('Password minimal 6 karakter','error');return;}
-  if (baru!==konfirm){showToast('Konfirmasi tidak cocok','error');return;}
+  if (!baru||baru.length<6){toast('Password minimal 6 karakter',true);return;}
+  if (baru!==konfirm){toast('Konfirmasi tidak cocok',true);return;}
   const {error}=await db.from('ortu_auth').update({password:baru}).eq('nisn',_ortuSession.nisn);
-  if(error){showToast('Gagal: '+error.message,'error');return;}
+  if(error){toast('Gagal: '+error.message,true);return;}
   document.getElementById('ortuPassModal').style.display='none';
-  showToast('✅ Password berhasil diubah!','success');
+  toast('✅ Password berhasil diubah!',false);
 }
 function ortuLogout(){
   _ortuSession=null; sessionStorage.removeItem('apbo_ortu');
