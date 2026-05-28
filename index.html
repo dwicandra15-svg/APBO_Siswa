@@ -333,6 +333,19 @@ tbody tr:last-child td{border-bottom:none}
   background: rgba(255,255,255,0.25);
   color: #fff;
 }
+/* ── PORTAL ORANG TUA ── */
+.ortu-tab{background:#fff;border:1.5px solid var(--border);border-radius:20px;padding:6px 14px;font-size:11px;font-weight:700;cursor:pointer;color:var(--text2);white-space:nowrap;transition:all .15s;flex-shrink:0}
+.ortu-tab.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.ortu-sec{display:none}
+.ortu-sec.active{display:block}
+.ortu-kal-day{aspect-ratio:1;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:3px 1px;min-height:30px}
+.ortu-kal-day.today{background:var(--primary)}
+.ortu-kal-day.today .okd-num{color:#fff;font-weight:800}
+.ortu-kal-day.other{opacity:.3}
+.okd-num{font-size:11px;font-weight:600;color:var(--text);line-height:1.3}
+.okd-dots{display:flex;gap:2px;justify-content:center;margin-top:1px}
+.okd-dot{width:4px;height:4px;border-radius:50%}
+
 /* ── KALENDER SISWA ── */
 .kal-s-filter{background:var(--surface);border:1.5px solid var(--border);border-radius:20px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;color:var(--text2);transition:all .15s}
 .kal-s-filter.active{background:var(--primary);border-color:var(--primary);color:#fff}
@@ -356,16 +369,23 @@ tbody tr:last-child td{border-bottom:none}
   <div class="login-bg-circle"></div>
   <div class="login-bg-circle"></div>
   <div class="login-card">
-    <div class="login-icon">📚</div>
+    <div class="login-icon" id="loginIcon">📚</div>
     <div class="login-title">APBO Siswa</div>
-    <div class="login-sub">Portal Informasi Orang Tua & Siswa</div>
+    <div class="login-sub" id="loginSub">Portal Informasi Orang Tua & Siswa</div>
+
+    <!-- Toggle Siswa / Orang Tua -->
+    <div style="display:flex;background:#f1f5f9;border-radius:10px;padding:3px;margin-bottom:16px;gap:3px">
+      <button id="toggleSiswa" onclick="switchLoginMode('siswa')" style="flex:1;padding:8px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;background:var(--primary);color:#fff;transition:all .2s">👨‍🎓 Siswa</button>
+      <button id="toggleOrtu" onclick="switchLoginMode('ortu')" style="flex:1;padding:8px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:#64748b;transition:all .2s">👨‍👩‍👧 Orang Tua</button>
+    </div>
+
     <div class="lerr" id="loginErr"></div>
-    <label class="lbl">NISN Siswa</label>
+    <label class="lbl" id="loginNisnLabel">NISN Siswa</label>
     <input type="text" id="nisnInput" class="linput" placeholder="Masukkan NISN siswa" inputmode="numeric" maxlength="20" onkeydown="if(event.key==='Enter')doLogin()">
-    <label class="lbl">Password (NISN)</label>
+    <label class="lbl" id="loginPassLabel">Password (NISN)</label>
     <input type="password" id="passInput" class="linput" placeholder="Sama dengan NISN" inputmode="numeric" maxlength="20" onkeydown="if(event.key==='Enter')doLogin()">
     <button class="lbtn" id="loginBtn" onclick="doLogin()">Masuk →</button>
-    <div class="login-hint">Gunakan <strong>NISN</strong> sebagai username <em>dan</em> password<br>Hubungi guru/wali kelas jika lupa NISN</div>
+    <div class="login-hint" id="loginHint">Gunakan <strong>NISN</strong> sebagai username <em>dan</em> password<br>Hubungi guru/wali kelas jika lupa NISN</div>
     <div class="login-wm">Supported by D.D Candra © 2025</div>
   </div>
 </div>
@@ -577,6 +597,117 @@ tbody tr:last-child td{border-bottom:none}
   </div>
 
 </div><!-- /appScreen -->
+
+<!-- ═══════ PORTAL ORANG TUA ═══════ -->
+<div id="ortuScreen" class="screen">
+
+  <!-- Topbar Ortu -->
+  <div class="topbar">
+    <div class="tb-left">
+      <div class="tb-logo">👨‍👩‍👧</div>
+      <div>
+        <div class="tb-app">Portal Orang Tua</div>
+        <div class="tb-school" id="ortuSchool">SMP Negeri 6 Sampang</div>
+      </div>
+    </div>
+    <div class="tb-right">
+      <button onclick="ortuGantiPassword()" style="background:rgba(255,255,255,.15);border:none;border-radius:8px;padding:6px 10px;color:#fff;font-size:11px;font-weight:700;cursor:pointer">🔑 Ganti PW</button>
+      <button onclick="ortuLogout()" style="background:rgba(255,255,255,.15);border:none;border-radius:8px;padding:6px 10px;color:#fff;font-size:11px;font-weight:700;cursor:pointer">Keluar</button>
+    </div>
+  </div>
+
+  <!-- Scroll area -->
+  <div id="ortuScroll" style="flex:1;overflow-y:auto;padding:12px 12px 80px">
+
+    <!-- Banner Siswa -->
+    <div class="profile-banner" id="ortuBanner" style="margin-bottom:14px">
+      <div class="pb-name" id="ortuSiswaName">—</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+        <div class="pb-chip">🏫 <span id="ortuKelas">—</span></div>
+        <div class="pb-chip">🪪 NISN: <span id="ortuNISN">—</span></div>
+      </div>
+      <div style="margin-top:8px;font-size:11px;opacity:.8">Portal Orang Tua / Wali Murid</div>
+    </div>
+
+    <!-- Tab navigasi -->
+    <div style="display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px">
+      <button class="ortu-tab active" id="otab-absensi" onclick="ortuGoTab('absensi',this)">📅 Absensi</button>
+      <button class="ortu-tab" id="otab-nilai" onclick="ortuGoTab('nilai',this)">📊 Nilai</button>
+      <button class="ortu-tab" id="otab-kalender" onclick="ortuGoTab('kalender',this)">📆 Kalender</button>
+      <button class="ortu-tab" id="otab-ews" onclick="ortuGoTab('ews',this)">🚨 EWS</button>
+    </div>
+
+    <!-- Konten Absensi -->
+    <div id="osec-absensi" class="ortu-sec active">
+      <div class="card" style="padding:16px">
+        <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:12px">📅 Rekap Absensi Anak</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px" id="ortuAbsenSummary">
+          <div style="background:#ecfdf5;border-radius:10px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:800;color:#10b981" id="ortuH">-</div><div style="font-size:10px;color:#10b981;font-weight:700">Hadir</div></div>
+          <div style="background:#fffbeb;border-radius:10px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:800;color:#f59e0b" id="ortuS">-</div><div style="font-size:10px;color:#f59e0b;font-weight:700">Sakit</div></div>
+          <div style="background:#eff6ff;border-radius:10px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:800;color:#3b82f6" id="ortuI">-</div><div style="font-size:10px;color:#3b82f6;font-weight:700">Izin</div></div>
+          <div style="background:#fef2f2;border-radius:10px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:800;color:#ef4444" id="ortuA">-</div><div style="font-size:10px;color:#ef4444;font-weight:700">Alfa</div></div>
+        </div>
+        <div id="ortuAbsenList" style="font-size:12px;color:var(--text2)">Memuat...</div>
+      </div>
+    </div>
+
+    <!-- Konten Nilai -->
+    <div id="osec-nilai" class="ortu-sec">
+      <div class="card" style="padding:16px">
+        <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:12px">📊 Rekap Nilai Anak</div>
+        <div id="ortuNilaiList">Memuat...</div>
+      </div>
+    </div>
+
+    <!-- Konten Kalender -->
+    <div id="osec-kalender" class="ortu-sec">
+      <div style="display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:12px;padding:10px 14px;margin-bottom:10px;box-shadow:var(--shadow)">
+        <button onclick="ortuKalPrev()" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:15px">‹</button>
+        <div style="text-align:center">
+          <div id="ortuKalLabel" style="font-size:14px;font-weight:800;color:var(--text)"></div>
+        </div>
+        <button onclick="ortuKalNext()" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:15px">›</button>
+      </div>
+      <div style="background:#fff;border-radius:12px;padding:12px;margin-bottom:10px;box-shadow:var(--shadow)">
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:6px">
+          <div style="text-align:center;font-size:10px;font-weight:700;color:#e02424">Min</div>
+          <div style="text-align:center;font-size:10px;font-weight:700;color:var(--text2)">Sen</div>
+          <div style="text-align:center;font-size:10px;font-weight:700;color:var(--text2)">Sel</div>
+          <div style="text-align:center;font-size:10px;font-weight:700;color:var(--text2)">Rab</div>
+          <div style="text-align:center;font-size:10px;font-weight:700;color:var(--text2)">Kam</div>
+          <div style="text-align:center;font-size:10px;font-weight:700;color:var(--text2)">Jum</div>
+          <div style="text-align:center;font-size:10px;font-weight:700;color:#1a56db">Sab</div>
+        </div>
+        <div id="ortuKalGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px"></div>
+      </div>
+      <div id="ortuKalList"></div>
+    </div>
+
+    <!-- Konten EWS -->
+    <div id="osec-ews" class="ortu-sec">
+      <div class="card" style="padding:16px">
+        <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:4px">🚨 Status Kehadiran Anak</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:14px">Berdasarkan rekap absensi</div>
+        <div id="ortuEWSContent">Memuat...</div>
+      </div>
+    </div>
+
+  </div><!-- /ortuScroll -->
+</div><!-- /ortuScreen -->
+
+<!-- Modal Ganti Password Ortu -->
+<div id="ortuPassModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:16px;padding:24px;width:100%;max-width:360px">
+    <h3 style="font-size:15px;font-weight:800;margin-bottom:16px">🔑 Ganti Password</h3>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Password baru minimal 6 karakter</div>
+    <input type="password" id="ortuPassBaru" placeholder="Password baru" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:10px;box-sizing:border-box">
+    <input type="password" id="ortuPassKonfirm" placeholder="Konfirmasi password baru" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:16px;box-sizing:border-box">
+    <div style="display:flex;gap:10px">
+      <button onclick="document.getElementById('ortuPassModal').style.display='none'" style="flex:1;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:11px;font-size:13px;font-weight:700;cursor:pointer">Batal</button>
+      <button onclick="ortuSimpanPassword()" style="flex:2;background:var(--primary);color:#fff;border:none;border-radius:10px;padding:11px;font-size:13px;font-weight:700;cursor:pointer">💾 Simpan</button>
+    </div>
+  </div>
+</div>
 
 <script>
 // ═══════════════════════════════════════════════
@@ -1388,6 +1519,224 @@ function kalFmtTgl(str) {
 function kalPrev(){ if(KAL_S.bulan===0){KAL_S.bulan=11;KAL_S.tahun--;}else KAL_S.bulan--; kalRender(); }
 function kalNext(){ if(KAL_S.bulan===11){KAL_S.bulan=0;KAL_S.tahun++;}else KAL_S.bulan++; kalRender(); }
 function kalFilter(kat,btn){ KAL_S.kat=kat; document.querySelectorAll('.kal-s-filter').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); kalRenderList(); }
+
+// ══════════════════════════════════════════════
+//  LOGIN MODE TOGGLE (Siswa / Orang Tua)
+// ══════════════════════════════════════════════
+let _loginMode = 'siswa';
+
+function switchLoginMode(mode) {
+  _loginMode = mode;
+  const isSiswa = mode === 'siswa';
+  document.getElementById('loginIcon').textContent = isSiswa ? '📚' : '👨‍👩‍👧';
+  document.getElementById('loginNisnLabel').textContent = 'NISN Siswa';
+  document.getElementById('loginPassLabel').textContent = isSiswa ? 'Password (NISN)' : 'Password Orang Tua';
+  document.getElementById('loginHint').innerHTML = isSiswa
+    ? 'Gunakan <strong>NISN</strong> sebagai username <em>dan</em> password<br>Hubungi guru/wali kelas jika lupa NISN'
+    : 'Username: <strong>NISN siswa</strong> · Password: <strong>NISN</strong> (default)<br>Password bisa diganti setelah login';
+  document.getElementById('passInput').placeholder = isSiswa ? 'Sama dengan NISN' : 'Password orang tua';
+  document.getElementById('loginErr').textContent = '';
+  document.getElementById('toggleSiswa').style.background = isSiswa ? 'var(--primary)' : 'transparent';
+  document.getElementById('toggleSiswa').style.color = isSiswa ? '#fff' : '#64748b';
+  document.getElementById('toggleOrtu').style.background = !isSiswa ? 'var(--primary)' : 'transparent';
+  document.getElementById('toggleOrtu').style.color = !isSiswa ? '#fff' : '#64748b';
+}
+
+// Patch doLogin untuk handle ortu
+const _origDoLogin = doLogin;
+window.doLogin = async function() {
+  if (_loginMode === 'ortu') { await doLoginOrtu(); return; }
+  await _origDoLogin();
+};
+
+async function doLoginOrtu() {
+  const nisn = document.getElementById('nisnInput').value.trim();
+  const pass = document.getElementById('passInput').value.trim();
+  const btn = document.getElementById('loginBtn');
+  const errEl = document.getElementById('loginErr');
+  errEl.textContent = '';
+  if (!nisn) { errEl.textContent = 'NISN tidak boleh kosong'; return; }
+  if (!pass) { errEl.textContent = 'Password tidak boleh kosong'; return; }
+  btn.textContent = 'Memuat...'; btn.disabled = true;
+  try {
+    const { data, error } = await db.from('ortu_auth').select('*').eq('nisn', nisn).limit(1);
+    if (error) throw error;
+    if (!data?.length) throw new Error('NISN tidak ditemukan');
+    const ortu = data[0];
+    if (ortu.password !== pass) throw new Error('Password salah');
+    let { data: sd } = await db.from('siswa').select('*').eq('nis', nisn).limit(1);
+    if (!sd?.length) { const {data:sd2} = await db.from('siswa').select('*').eq('nis', nisn.replace(/^0+/,'')).limit(1); sd=sd2; }
+    if (!sd?.length) throw new Error('Data siswa tidak ditemukan');
+    await db.from('ortu_auth').update({ last_login: new Date().toISOString() }).eq('nisn', nisn);
+    const sess = { mode:'ortu', ortu, siswa:sd[0], nisn };
+    sessionStorage.setItem('apbo_ortu', JSON.stringify(sess));
+    masukPortalOrtu(sess);
+  } catch(e) {
+    errEl.textContent = e.message || 'Login gagal';
+  } finally { btn.textContent = 'Masuk →'; btn.disabled = false; }
+}
+
+// ══════════════════════════════════════════════
+//  PORTAL ORANG TUA
+// ══════════════════════════════════════════════
+let _ortuSession = null;
+const KAL_ORTU = { tahun: new Date().getFullYear(), bulan: new Date().getMonth(), data: [] };
+const BULAN_OT = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
+function masukPortalOrtu(session) {
+  _ortuSession = session;
+  const s = session.siswa;
+  document.querySelectorAll('.screen').forEach(sc => { sc.classList.remove('active'); sc.style.display=''; });
+  const ortuSc = document.getElementById('ortuScreen');
+  ortuSc.classList.add('active');
+  ortuSc.style.display = 'flex';
+  document.getElementById('ortuSiswaName').textContent = s.nama || '—';
+  document.getElementById('ortuNISN').textContent = s.nis || '—';
+  ortuLoadKelas(s.kelas_id);
+  ortuLoadAbsensi();
+}
+
+async function ortuLoadKelas(kelasId) {
+  if (!kelasId) { document.getElementById('ortuKelas').textContent = '—'; return; }
+  const { data } = await db.from('kelas').select('nama').eq('id', kelasId).limit(1);
+  document.getElementById('ortuKelas').textContent = data?.[0]?.nama || '—';
+}
+
+function ortuGoTab(tab, btn) {
+  document.querySelectorAll('.ortu-sec').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.ortu-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('osec-'+tab).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (tab==='absensi') ortuLoadAbsensi();
+  if (tab==='nilai') ortuLoadNilai();
+  if (tab==='kalender') ortuLoadKalender();
+  if (tab==='ews') ortuLoadEWS();
+}
+
+async function ortuLoadAbsensi() {
+  const s = _ortuSession?.siswa; if (!s) return;
+  const { data } = await db.from('absensi').select('*').eq('siswa_id', s.id).order('tanggal', {ascending:false});
+  const rec = data||[];
+  document.getElementById('ortuH').textContent = rec.filter(r=>r.status==='H').length;
+  document.getElementById('ortuS').textContent = rec.filter(r=>r.status==='S').length;
+  document.getElementById('ortuI').textContent = rec.filter(r=>r.status==='I').length;
+  document.getElementById('ortuA').textContent = rec.filter(r=>r.status==='A').length;
+  document.getElementById('ortuAbsenList').innerHTML = rec.slice(0,30).map(r => {
+    const tgl = new Date(r.tanggal+'T00:00:00').toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});
+    const map = {H:['Hadir','#10b981'],S:['Sakit','#f59e0b'],I:['Izin','#3b82f6'],A:['Alfa','#ef4444']};
+    const [lbl,w] = map[r.status]||['—','#64748b'];
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:12px">${tgl}</span>
+      <span style="background:${w}22;color:${w};padding:2px 10px;border-radius:99px;font-size:11px;font-weight:700">${lbl}</span>
+    </div>`;
+  }).join('') || '<div style="text-align:center;padding:20px;color:var(--text2)">Belum ada data</div>';
+}
+
+async function ortuLoadNilai() {
+  const s = _ortuSession?.siswa; if (!s) return;
+  const { data } = await db.from('nilai').select('*').eq('siswa_id', s.id);
+  const rec = data||[];
+  if (!rec.length) { document.getElementById('ortuNilaiList').innerHTML='<div style="text-align:center;padding:20px;color:var(--text2)">Belum ada nilai</div>'; return; }
+  const byKat = {};
+  rec.forEach(r=>{ const k=r.kategori||'Lainnya'; if(!byKat[k])byKat[k]=[]; byKat[k].push(r); });
+  document.getElementById('ortuNilaiList').innerHTML = Object.entries(byKat).map(([kat,items])=>{
+    const avg=Math.round(items.reduce((s,r)=>s+(r.nilai||0),0)/items.length);
+    const w=avg>=80?'#10b981':avg>=70?'#f59e0b':'#ef4444';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div><div style="font-size:13px;font-weight:700">${kat}</div><div style="font-size:11px;color:var(--text2)">${items.length} pertemuan</div></div>
+      <div style="background:${w}22;color:${w};font-size:18px;font-weight:800;padding:4px 14px;border-radius:10px">${avg}</div>
+    </div>`;
+  }).join('');
+}
+
+async function ortuLoadKalender() {
+  const { data } = await db.from('agenda_sekolah').select('*').order('tanggal_mulai');
+  KAL_ORTU.data = data||[];
+  ortuRenderKal();
+}
+
+function ortuRenderKal() {
+  const today = new Date();
+  document.getElementById('ortuKalLabel').textContent = `${BULAN_OT[KAL_ORTU.bulan]} ${KAL_ORTU.tahun}`;
+  const fd=new Date(KAL_ORTU.tahun,KAL_ORTU.bulan,1).getDay();
+  const dim=new Date(KAL_ORTU.tahun,KAL_ORTU.bulan+1,0).getDate();
+  const dip=new Date(KAL_ORTU.tahun,KAL_ORTU.bulan,0).getDate();
+  let html='';
+  for(let i=fd-1;i>=0;i--) html+=`<div class="ortu-kal-day other"><div class="okd-num">${dip-i}</div></div>`;
+  for(let d=1;d<=dim;d++){
+    const ds=`${KAL_ORTU.tahun}-${String(KAL_ORTU.bulan+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isT=today.getFullYear()===KAL_ORTU.tahun&&today.getMonth()===KAL_ORTU.bulan&&today.getDate()===d;
+    const evs=KAL_ORTU.data.filter(e=>ds>=e.tanggal_mulai&&ds<=(e.tanggal_selesai||e.tanggal_mulai));
+    const dots=evs.slice(0,3).map(e=>`<div class="okd-dot" style="background:${e.warna||'#1a56db'}"></div>`).join('');
+    html+=`<div class="ortu-kal-day ${isT?'today':''}"><div class="okd-num">${d}</div><div class="okd-dots">${dots}</div></div>`;
+  }
+  const pad=(fd+dim)%7===0?0:7-((fd+dim)%7);
+  for(let i=1;i<=pad;i++) html+=`<div class="ortu-kal-day other"><div class="okd-num">${i}</div></div>`;
+  document.getElementById('ortuKalGrid').innerHTML = html;
+  const tgl1=`${KAL_ORTU.tahun}-${String(KAL_ORTU.bulan+1).padStart(2,'0')}-01`;
+  const tglN=new Date(KAL_ORTU.tahun,KAL_ORTU.bulan+1,0);
+  const tglE=`${KAL_ORTU.tahun}-${String(KAL_ORTU.bulan+1).padStart(2,'0')}-${String(tglN.getDate()).padStart(2,'0')}`;
+  const list=KAL_ORTU.data.filter(e=>e.tanggal_mulai<=tglE&&(e.tanggal_selesai||e.tanggal_mulai)>=tgl1);
+  document.getElementById('ortuKalList').innerHTML = list.map(e=>{
+    const w=e.warna||'#1a56db';
+    const tgl=e.tanggal_selesai&&e.tanggal_selesai!==e.tanggal_mulai?`${otFmt(e.tanggal_mulai)} — ${otFmt(e.tanggal_selesai)}`:otFmt(e.tanggal_mulai);
+    return `<div style="background:#fff;border-radius:10px;padding:10px 12px;margin-bottom:8px;box-shadow:var(--shadow);border-left:3px solid ${w}">
+      <div><span style="background:${w}22;color:${w};padding:1px 7px;border-radius:99px;font-size:10px;font-weight:700">${e.kategori||'Lainnya'}</span></div>
+      <div style="font-size:13px;font-weight:700;margin:4px 0 2px">${e.judul}</div>
+      <div style="font-size:11px;color:var(--text2)">📅 ${tgl}</div>
+    </div>`;
+  }).join('') || '<div style="text-align:center;padding:20px;color:var(--text2)">Tidak ada event bulan ini</div>';
+}
+function otFmt(str){const d=new Date(str+'T00:00:00');return `${d.getDate()} ${BULAN_OT[d.getMonth()]} ${d.getFullYear()}`;}
+function ortuKalPrev(){if(KAL_ORTU.bulan===0){KAL_ORTU.bulan=11;KAL_ORTU.tahun--;}else KAL_ORTU.bulan--;ortuRenderKal();}
+function ortuKalNext(){if(KAL_ORTU.bulan===11){KAL_ORTU.bulan=0;KAL_ORTU.tahun++;}else KAL_ORTU.bulan++;ortuRenderKal();}
+
+async function ortuLoadEWS() {
+  const s = _ortuSession?.siswa; if (!s) return;
+  const { data } = await db.from('absensi').select('*').eq('siswa_id', s.id);
+  const rec = data||[];
+  const A=rec.filter(r=>r.status==='A').length;
+  const total=rec.length;
+  const pct=total?Math.round(rec.filter(r=>r.status==='H').length/total*100):100;
+  const [status,w,icon]=A>=5?['KRITIS','#ef4444','🔴']:A>=3?['WARNING','#f59e0b','⚠️']:['AMAN','#10b981','✅'];
+  document.getElementById('ortuEWSContent').innerHTML=`
+    <div style="text-align:center;padding:20px 0">
+      <div style="font-size:48px">${icon}</div>
+      <div style="font-size:22px;font-weight:800;color:${w};margin-top:6px">${status}</div>
+      <div style="font-size:13px;color:var(--text2);margin-top:6px">Total Alfa: <strong style="color:${w}">${A}x</strong> · Kehadiran: <strong>${pct}%</strong></div>
+    </div>
+    <div style="background:${w}11;border-radius:10px;padding:12px;font-size:12px;color:${w};font-weight:600;text-align:center">
+      ${A>=5?'⚠️ Segera hubungi wali kelas':A>=3?'📢 Kehadiran perlu ditingkatkan':'✅ Kehadiran dalam kondisi baik'}
+    </div>`;
+}
+
+function ortuGantiPassword() {
+  document.getElementById('ortuPassBaru').value='';
+  document.getElementById('ortuPassKonfirm').value='';
+  document.getElementById('ortuPassModal').style.display='flex';
+}
+async function ortuSimpanPassword() {
+  const baru=document.getElementById('ortuPassBaru').value.trim();
+  const konfirm=document.getElementById('ortuPassKonfirm').value.trim();
+  if (!baru||baru.length<6){showToast('Password minimal 6 karakter','error');return;}
+  if (baru!==konfirm){showToast('Konfirmasi tidak cocok','error');return;}
+  const {error}=await db.from('ortu_auth').update({password:baru}).eq('nisn',_ortuSession.nisn);
+  if(error){showToast('Gagal: '+error.message,'error');return;}
+  document.getElementById('ortuPassModal').style.display='none';
+  showToast('✅ Password berhasil diubah!','success');
+}
+function ortuLogout(){
+  _ortuSession=null; sessionStorage.removeItem('apbo_ortu');
+  document.querySelectorAll('.screen').forEach(sc=>{sc.classList.remove('active');sc.style.display='';});
+  const ls=document.getElementById('loginScreen'); ls.classList.add('active'); ls.style.display='flex';
+  switchLoginMode('siswa');
+}
+
+// Cek session ortu saat load
+try {
+  const so=sessionStorage.getItem('apbo_ortu');
+  if(so){const sess=JSON.parse(so);if(sess.mode==='ortu')setTimeout(()=>masukPortalOrtu(sess),600);}
+} catch(e){sessionStorage.removeItem('apbo_ortu');}
 </script>
 </body>
 </html>
