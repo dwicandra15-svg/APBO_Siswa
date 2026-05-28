@@ -632,6 +632,7 @@ tbody tr:last-child td{border-bottom:none}
     <!-- Tab navigasi -->
     <div style="display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px">
       <button class="ortu-tab active" id="otab-absensi" onclick="ortuGoTab('absensi',this)">📅 Absensi</button>
+      <button class="ortu-tab" id="otab-izin" onclick="ortuGoTab('izin',this)">📝 Surat Izin</button>
       <button class="ortu-tab" id="otab-nilai" onclick="ortuGoTab('nilai',this)">📊 Nilai</button>
       <button class="ortu-tab" id="otab-kalender" onclick="ortuGoTab('kalender',this)">📆 Kalender</button>
       <button class="ortu-tab" id="otab-ews" onclick="ortuGoTab('ews',this)">🚨 EWS</button>
@@ -641,7 +642,7 @@ tbody tr:last-child td{border-bottom:none}
     <div id="osec-absensi" class="ortu-sec active">
       <div class="card" style="padding:16px">
         <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:12px">📅 Rekap Absensi Anak</div>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px" id="ortuAbsenSummary">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
           <div style="background:#ecfdf5;border-radius:10px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:800;color:#10b981" id="ortuH">-</div><div style="font-size:10px;color:#10b981;font-weight:700">Hadir</div></div>
           <div style="background:#fffbeb;border-radius:10px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:800;color:#f59e0b" id="ortuS">-</div><div style="font-size:10px;color:#f59e0b;font-weight:700">Sakit</div></div>
           <div style="background:#eff6ff;border-radius:10px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:800;color:#3b82f6" id="ortuI">-</div><div style="font-size:10px;color:#3b82f6;font-weight:700">Izin</div></div>
@@ -651,8 +652,32 @@ tbody tr:last-child td{border-bottom:none}
       </div>
     </div>
 
-    <!-- Konten Nilai -->
-    <div id="osec-nilai" class="ortu-sec">
+    <!-- Konten Surat Izin -->
+    <div id="osec-izin" class="ortu-sec">
+      <!-- Form Buat Izin -->
+      <div class="card" style="padding:16px;margin-bottom:12px">
+        <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:14px">📝 Buat Surat Izin</div>
+        <div style="margin-bottom:12px">
+          <label style="font-size:11px;font-weight:700;color:var(--text2);display:block;margin-bottom:5px">Tanggal Tidak Masuk</label>
+          <input type="date" id="izinTglMulai" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:9px 12px;font-size:13px;box-sizing:border-box">
+        </div>
+        <div style="margin-bottom:12px">
+          <label style="font-size:11px;font-weight:700;color:var(--text2);display:block;margin-bottom:5px">Sampai Tanggal <span style="color:var(--text2);font-weight:400">(opsional, isi jika lebih dari 1 hari)</span></label>
+          <input type="date" id="izinTglSelesai" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:9px 12px;font-size:13px;box-sizing:border-box">
+        </div>
+        <div style="margin-bottom:14px">
+          <label style="font-size:11px;font-weight:700;color:var(--text2);display:block;margin-bottom:5px">Alasan / Keterangan</label>
+          <textarea id="izinAlasan" rows="3" placeholder="Contoh: Sakit demam, sudah ke dokter" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:9px 12px;font-size:13px;box-sizing:border-box;resize:none;font-family:inherit"></textarea>
+        </div>
+        <button onclick="ortuKirimIzin()" style="width:100%;background:var(--primary);color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer">📤 Kirim Surat Izin</button>
+      </div>
+
+      <!-- Riwayat Izin -->
+      <div class="card" style="padding:16px">
+        <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:12px">📋 Riwayat Surat Izin</div>
+        <div id="ortuIzinList">Memuat...</div>
+      </div>
+    </div>
       <div class="card" style="padding:16px">
         <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:12px">📊 Rekap Nilai Anak</div>
         <div id="ortuNilaiList">Memuat...</div>
@@ -1608,9 +1633,69 @@ function ortuGoTab(tab, btn) {
   document.getElementById('osec-'+tab).classList.add('active');
   if (btn) btn.classList.add('active');
   if (tab==='absensi') ortuLoadAbsensi();
+  if (tab==='izin') ortuLoadIzin();
   if (tab==='nilai') ortuLoadNilai();
   if (tab==='kalender') ortuLoadKalender();
   if (tab==='ews') ortuLoadEWS();
+}
+
+async function ortuKirimIzin() {
+  const s = _ortuSession?.siswa;
+  if (!s) return;
+  const tglMulai = document.getElementById('izinTglMulai').value;
+  const tglSelesai = document.getElementById('izinTglSelesai').value || tglMulai;
+  const alasan = document.getElementById('izinAlasan').value.trim();
+  if (!tglMulai) { showToast('Tanggal tidak masuk wajib diisi','error'); return; }
+  if (!alasan) { showToast('Alasan/keterangan wajib diisi','error'); return; }
+
+  const { error } = await db.from('izin_siswa').insert({
+    siswa_id: s.id,
+    nisn: s.nis,
+    nama_siswa: s.nama,
+    kelas_id: s.kelas_id,
+    tanggal: tglMulai,
+    tanggal_selesai: tglSelesai,
+    alasan,
+    status: 'menunggu'
+  });
+  if (error) { showToast('Gagal kirim: '+error.message,'error'); return; }
+  document.getElementById('izinTglMulai').value = '';
+  document.getElementById('izinTglSelesai').value = '';
+  document.getElementById('izinAlasan').value = '';
+  showToast('✅ Surat izin berhasil dikirim ke guru!','success');
+  ortuLoadIzin();
+}
+
+async function ortuLoadIzin() {
+  const s = _ortuSession?.siswa;
+  if (!s) return;
+  const el = document.getElementById('ortuIzinList');
+  el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text2)"><div class="load-spin"></div></div>';
+  const { data } = await db.from('izin_siswa').select('*')
+    .eq('siswa_id', s.id).order('created_at', {ascending:false});
+  const rec = data || [];
+  if (!rec.length) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text2)">Belum ada riwayat surat izin</div>';
+    return;
+  }
+  el.innerHTML = rec.map(r => {
+    const tgl = r.tanggal_selesai && r.tanggal_selesai !== r.tanggal
+      ? `${otFmt(r.tanggal)} — ${otFmt(r.tanggal_selesai)}`
+      : otFmt(r.tanggal);
+    const [badge, w] = r.status==='disetujui'
+      ? ['✅ Disetujui','#10b981']
+      : r.status==='ditolak'
+      ? ['❌ Ditolak','#ef4444']
+      : ['⏳ Menunggu','#f59e0b'];
+    return `<div style="border:1.5px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div style="font-size:12px;font-weight:700;color:var(--text)">📅 ${tgl}</div>
+        <span style="background:${w}22;color:${w};padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700">${badge}</span>
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:${r.catatan_guru?'6px':'0'}">${r.alasan}</div>
+      ${r.catatan_guru?`<div style="background:#f1f5f9;border-radius:8px;padding:6px 10px;font-size:11px;color:var(--text2)">💬 Guru: ${r.catatan_guru}</div>`:''}
+    </div>`;
+  }).join('');
 }
 
 async function ortuLoadAbsensi() {
