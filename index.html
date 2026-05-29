@@ -1116,6 +1116,8 @@ async function loadChat() {
 
   renderChatMsgs(data||[]);
   subscribeChat();
+  // Mulai pantau realtime status izin milik siswa ini
+  try { subscribeIzinRealtime(SISWA?.id); } catch(e) {}
 }
 
 function renderChatMsgs(msgs) {
@@ -1194,6 +1196,56 @@ function subscribeChat() {
       if (status === 'SUBSCRIBED') console.log('Chat realtime aktif ✓');
     });
 }
+
+// ── Realtime: pantau UPDATE status izin_siswa ────────────────
+let _izinChannel = null;
+
+function subscribeIzinRealtime(siswaId) {
+  // Hapus channel lama jika ada
+  if (_izinChannel) {
+    try { db.removeChannel(_izinChannel); } catch(e) {}
+    _izinChannel = null;
+  }
+  if (!siswaId) return;
+
+  try {
+    _izinChannel = db.channel('izin_status_ortu_' + siswaId)
+      .on('postgres_changes', {
+        event:  'UPDATE',
+        schema: 'public',
+        table:  'izin_siswa',
+        filter: `siswa_id=eq.${siswaId}`
+      }, payload => {
+        // Status izin berubah → reload tampilan daftar izin
+        const baru   = payload.new?.status || '';
+        const label  = baru === 'disetujui' ? '✅ Disetujui'
+                     : baru === 'ditolak'   ? '❌ Ditolak'
+                     : '⏳ Menunggu';
+        // Reload list jika tab izin sedang aktif
+        const tabIzin = document.getElementById('osec-izin');
+        if (tabIzin && tabIzin.classList.contains('active')) {
+          ortuLoadIzin();
+        }
+        // Tambah notif ke lonceng
+        try {
+          NOTIFS.unshift({
+            id: 'iz' + Date.now(),
+            judul: '📨 Status Surat Izin',
+            isi: `Surat izin anda ${label.toLowerCase()} oleh guru`,
+            waktu: new Date().toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}),
+            dibaca: false
+          });
+          renderNotif();
+        } catch(e) {}
+      })
+      .subscribe(status => {
+        if (status === 'SUBSCRIBED') console.log('Izin realtime aktif ✓');
+      });
+  } catch(e) {
+    console.warn('subscribeIzinRealtime error:', e);
+  }
+}
+// ─────────────────────────────────────────────────────────────
 
 function appendChatMsg(m) {
   const el = document.getElementById('chatMsgs');
@@ -1610,6 +1662,8 @@ const BULAN_OT = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agus
 
 function masukPortalOrtu(session) {
   _ortuSession = session;
+  // Mulai pantau realtime status izin untuk siswa ini
+  try { subscribeIzinRealtime(session?.siswa?.id); } catch(e) {}
   const s = session.siswa;
   document.querySelectorAll('.screen').forEach(sc => { sc.classList.remove('active'); sc.style.display=''; });
   const ortuSc = document.getElementById('ortuScreen');
