@@ -1209,37 +1209,36 @@ function subscribeIzinRealtime(siswaId) {
   if (!siswaId) return;
 
   try {
-    _izinChannel = db.channel('izin_status_ortu_' + siswaId)
+    _izinChannel = db.channel('izin_ortu_' + siswaId)
       .on('postgres_changes', {
         event:  'UPDATE',
         schema: 'public',
-        table:  'izin_siswa',
-        filter: `siswa_id=eq.${siswaId}`
+        table:  'izin_siswa'
+        // filter dihapus — Supabase free tier kadang tidak support filter realtime
+        // penyaringan dilakukan manual di callback
       }, payload => {
-        // Status izin berubah → reload tampilan daftar izin
-        const baru   = payload.new?.status || '';
-        const label  = baru === 'disetujui' ? '✅ Disetujui'
-                     : baru === 'ditolak'   ? '❌ Ditolak'
-                     : '⏳ Menunggu';
-        // Reload list jika tab izin sedang aktif
-        const tabIzin = document.getElementById('osec-izin');
-        if (tabIzin && tabIzin.classList.contains('active')) {
-          ortuLoadIzin();
-        }
-        // Tambah notif ke lonceng
+        // Saring manual: hanya proses jika milik siswa ini
+        if (String(payload.new?.siswa_id) !== String(siswaId)) return;
+        const baru  = payload.new?.status || '';
+        const label = baru === 'disetujui' ? '✅ Disetujui'
+                    : baru === 'ditolak'   ? '❌ Ditolak'
+                    : '⏳ Menunggu';
+        // Reload list izin
+        ortuLoadIzin();
+        // Notif lonceng
         try {
           NOTIFS.unshift({
             id: 'iz' + Date.now(),
             judul: '📨 Status Surat Izin',
-            isi: `Surat izin anda ${label.toLowerCase()} oleh guru`,
-            waktu: new Date().toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}),
+            isi: `Surat izin ${label.toLowerCase()} oleh guru`,
+            waktu: new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}),
             dibaca: false
           });
           renderNotif();
         } catch(e) {}
       })
       .subscribe(status => {
-        if (status === 'SUBSCRIBED') console.log('Izin realtime aktif ✓');
+        console.log('Izin realtime:', status);
       });
   } catch(e) {
     console.warn('subscribeIzinRealtime error:', e);
@@ -1741,16 +1740,50 @@ async function ortuLoadIzin() {
       : r.status==='ditolak'
       ? ['❌ Ditolak','#ef4444']
       : ['⏳ Menunggu','#f59e0b'];
+    const rid = r.id;
+    const canEdit = r.status === 'menunggu';
     return `<div style="border:1.5px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
         <div style="font-size:12px;font-weight:700;color:var(--text)">📅 ${tgl}</div>
         <span style="background:${w}22;color:${w};padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700">${badge}</span>
       </div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:${r.catatan_guru?'6px':'0'}">${r.alasan}</div>
-      ${r.catatan_guru?`<div style="background:#f1f5f9;border-radius:8px;padding:6px 10px;font-size:11px;color:var(--text2)">💬 Guru: ${r.catatan_guru}</div>`:''}
+      <div style="font-size:12px;color:var(--text2);margin-bottom:${r.catatan_guru?'6px':'4px'}">${r.alasan}</div>
+      ${r.catatan_guru?`<div style="background:#f1f5f9;border-radius:8px;padding:6px 10px;font-size:11px;color:var(--text2);margin-bottom:8px">💬 Guru: ${r.catatan_guru}</div>`:''}
+      <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:6px">
+        ${canEdit?`<button onclick="ortuEditIzin('${rid}')" style="background:#eff6ff;color:#3b82f6;border:1px solid #bfdbfe;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer">✏️ Edit</button>`:''}
+        <button onclick="ortuDeleteIzin('${rid}')" style="background:#fff1f2;color:#ef4444;border:1px solid #fecaca;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer">🗑️ Hapus</button>
+      </div>
     </div>`;
   }).join('');
 }
+
+// ── Edit surat izin (hanya status menunggu) ──────────────────
+function ortuEditIzin(id) {
+  const s = _ortuSession?.siswa;
+  if (!s) return;
+  // Ambil data dari DOM — re-fetch untuk akurasi
+  db.from('izin_siswa').select('*').eq('id', id).maybeSingle().then(({data: r}) => {
+    if (!r) return;
+    if (r.status !== 'menunggu') { alert('Surat izin yang sudah diproses tidak dapat diedit.'); return; }
+    const alasanBaru = prompt('Edit alasan izin:', r.alasan);
+    if (alasanBaru === null) return; // cancel
+    if (!alasanBaru.trim()) { alert('Alasan tidak boleh kosong.'); return; }
+    db.from('izin_siswa').update({ alasan: alasanBaru.trim() }).eq('id', id).then(({error}) => {
+      if (error) { alert('Gagal edit: ' + error.message); return; }
+      ortuLoadIzin();
+    });
+  });
+}
+
+// ── Hapus surat izin ─────────────────────────────────────────
+function ortuDeleteIzin(id) {
+  if (!confirm('Yakin ingin menghapus surat izin ini?')) return;
+  db.from('izin_siswa').delete().eq('id', id).then(({error}) => {
+    if (error) { alert('Gagal hapus: ' + error.message); return; }
+    ortuLoadIzin();
+  });
+}
+// ─────────────────────────────────────────────────────────────
 
 async function ortuLoadAbsensi() {
   const s = _ortuSession?.siswa; if (!s) return;
