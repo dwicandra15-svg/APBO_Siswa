@@ -467,7 +467,7 @@ tbody tr:last-child td{border-bottom:none}
             <span id="absKuEmoji">📲</span>
           </div>
           <div style="flex:1">
-            <div style="font-size:15px;font-weight:800;color:var(--text)">AbsensiKu</div>
+            <div class="absku-name" style="font-size:15px;font-weight:800;color:var(--text)">AbsensiKu</div>
             <div style="font-size:12px;color:var(--text-muted,#94a3b8);margin-top:2px">Aplikasi absensi sekolah</div>
           </div>
           <button onclick="bukaAbsensiKu()" style="background:var(--primary,#3b82f6);color:#fff;border:none;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer">Buka →</button>
@@ -875,37 +875,54 @@ let _absKuUrl = '';
 
 async function loadAbsensiKuConfig() {
   try {
-    // Ambil dari app_settings key 'apel_config' (disimpan oleh APEL JUMBO saat Simpan Pengaturan)
-    const { data } = await db.from('app_settings')
-      .select('value').eq('key','apel_config').maybeSingle();
-    if (!data?.value) { console.warn('apel_config tidak ada di Supabase'); return; }
-    const cfg = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
-    _absKuUrl = cfg.absensiKuUrl || '';
-    console.log('AbsensiKu URL:', _absKuUrl || '(kosong)');
+    // Baca semua rows dari app_settings sekaligus — lebih efisien dan robust
+    const { data: rows, error } = await db.from('app_settings').select('key,value');
+    if (error) { console.warn('app_settings error:', error.message); return; }
+    if (!rows || !rows.length) { console.warn('app_settings kosong'); return; }
 
-    // Tampilkan kartu hanya jika URL sudah diisi
+    // Cari URL AbsensiKu dari berbagai kemungkinan key
+    let url = '';
+    for (const row of rows) {
+      if (row.key === 'absensiku_url') {
+        // Key khusus simple string
+        url = typeof row.value === 'string'
+          ? row.value.replace(/^"|"$/g,'').trim()
+          : (row.value?.url || row.value || '');
+        if (url) break;
+      }
+      if (row.key === 'apel_config') {
+        try {
+          const cfg = typeof row.value === 'string' ? JSON.parse(row.value) : row.value;
+          url = cfg?.absensiKuUrl || '';
+        } catch(e) {}
+      }
+    }
+
+    _absKuUrl = url.trim();
+    console.log('AbsensiKu URL ditemukan:', _absKuUrl || '(kosong)');
+
     const card = document.getElementById('cardAbsensiKu');
     if (!card) return;
+
     if (_absKuUrl) {
       card.style.display = '';
-      // Tampilkan logo jika ada (dari card_config)
+      // Coba ambil logo dari card_config
       try {
-        const { data: cc } = await db.from('app_settings')
-          .select('value').eq('key','card_config').maybeSingle();
-        if (cc?.value) {
-          const ccParsed = typeof cc.value === 'string' ? JSON.parse(cc.value) : cc.value;
-          const jurnal = ccParsed['jurnal']; // kartu AbsensiKu di APEL JUMBO pakai id 'jurnal'
+        const ccRow = rows.find(r => r.key === 'card_config');
+        if (ccRow?.value) {
+          const cc = typeof ccRow.value === 'string' ? JSON.parse(ccRow.value) : ccRow.value;
+          const jurnal = cc['jurnal'];
           if (jurnal?.img) {
             const img = document.getElementById('absKuLogo');
             const emoji = document.getElementById('absKuEmoji');
             if (img) { img.src = jurnal.img; img.style.display = 'block'; }
             if (emoji) emoji.style.display = 'none';
           } else if (jurnal?.emoji) {
-            const emoji = document.getElementById('absKuEmoji');
-            if (emoji) emoji.textContent = jurnal.emoji;
+            const el = document.getElementById('absKuEmoji');
+            if (el) el.textContent = jurnal.emoji;
           }
           if (jurnal?.name) {
-            const nameEl = document.querySelector('#cardAbsensiKu [style*="font-size:15px"]');
+            const nameEl = document.querySelector('#cardAbsensiKu .absku-name');
             if (nameEl) nameEl.textContent = jurnal.name;
           }
         }
@@ -914,7 +931,7 @@ async function loadAbsensiKuConfig() {
       card.style.display = 'none';
     }
   } catch(e) {
-    console.warn('loadAbsensiKuConfig:', e);
+    console.warn('loadAbsensiKuConfig error:', e);
   }
 }
 
