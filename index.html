@@ -1069,6 +1069,77 @@ function subscribeAbsensiRfid(nisn, siswaId) {
 // ─────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────
 
+// ══════════════════════════════════════════════════════════════
+// REALTIME: Subscribe semua tabel — tidak perlu refresh manual
+// ══════════════════════════════════════════════════════════════
+let _realtimeChannels = [];
+
+function startAllRealtime() {
+  // Bersihkan channel lama
+  _realtimeChannels.forEach(ch => { try { db.removeChannel(ch); } catch(e){} });
+  _realtimeChannels = [];
+
+  const sid = SISWA?.id;
+  if (!sid) return;
+
+  // ── 1. ABSENSI — rekap kehadiran ──────────────────────────
+  const chAbsensi = db.channel('rt_absensi_' + sid)
+    .on('postgres_changes', {
+      event: '*', schema: 'public', table: 'absensi'
+    }, payload => {
+      if (String(payload.new?.siswa_id || payload.old?.siswa_id) !== String(sid)) return;
+      try { loadAbsensiSummary(); } catch(e){}
+      try { loadAbsensi(); } catch(e){}
+      // Tambah notif lonceng
+      if (payload.eventType === 'INSERT') {
+        const st = payload.new?.status;
+        const label = st==='H'?'✅ Hadir':st==='A'?'⚠️ Alpha':st==='S'?'🤒 Sakit':'📋 Izin';
+        NOTIFS.unshift({ id:'ab'+Date.now(), judul:'📅 Absensi Baru', isi:`Status absensi: ${label} pada ${payload.new?.tanggal||'-'}`, waktu:new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}), dibaca:false });
+        try { renderNotif(); } catch(e){}
+      }
+    })
+    .subscribe();
+  _realtimeChannels.push(chAbsensi);
+
+  // ── 2. NILAI — nilai per mapel ────────────────────────────
+  const chNilai = db.channel('rt_nilai_' + sid)
+    .on('postgres_changes', {
+      event: '*', schema: 'public', table: 'nilai'
+    }, payload => {
+      if (String(payload.new?.siswa_id || payload.old?.siswa_id) !== String(sid)) return;
+      try { loadNilaiRingkasan(); } catch(e){}
+      try { loadNilai(); } catch(e){}
+      // Notif lonceng
+      if (payload.eventType === 'INSERT') {
+        const skor = payload.new?.skor || '-';
+        NOTIFS.unshift({ id:'nl'+Date.now(), judul:'📝 Nilai Baru', isi:`Nilai baru masuk: ${skor}`, waktu:new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}), dibaca:false });
+        try { renderNotif(); } catch(e){}
+      }
+    })
+    .subscribe();
+  _realtimeChannels.push(chNilai);
+
+  // ── 3. BIMBINGAN/CATATAN ──────────────────────────────────
+  const chCatatan = db.channel('rt_bimbingan_' + sid)
+    .on('postgres_changes', {
+      event: '*', schema: 'public', table: 'bimbingan'
+    }, payload => {
+      if (String(payload.new?.siswa_id || payload.old?.siswa_id) !== String(sid)) return;
+      try { loadCatatanRingkasan(); } catch(e){}
+      try { loadCatatan(); } catch(e){}
+      // Notif lonceng
+      if (payload.eventType === 'INSERT') {
+        NOTIFS.unshift({ id:'ct'+Date.now(), judul:'⚠️ Catatan Guru', isi:payload.new?.masalah||'Ada catatan baru dari guru', waktu:new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}), dibaca:false });
+        try { renderNotif(); } catch(e){}
+      }
+    })
+    .subscribe();
+  _realtimeChannels.push(chCatatan);
+
+  console.log('✅ Realtime aktif: absensi, nilai, bimbingan, izin, rfid, chat');
+}
+// ══════════════════════════════════════════════════════════════
+
 function goTab(tab) {
   document.querySelectorAll('.page-sec').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.bn-item').forEach(b => b.classList.remove('active'));
@@ -1336,6 +1407,8 @@ async function loadChat() {
   try { loadAbsensiKuConfig(); } catch(e) {}
   try { loadAbsensiKuLog(); } catch(e) {}
   try { subscribeAbsensiRfid(SISWA?.nisn, SISWA?.id); } catch(e) {}
+  // Aktifkan realtime untuk semua fitur
+  try { startAllRealtime(); } catch(e) {}
 }
 
 function renderChatMsgs(msgs) {
