@@ -461,16 +461,40 @@ tbody tr:last-child td{border-bottom:none}
       </div>
       <!-- ── KARTU ABSENSIKU ── -->
       <div class="card" id="cardAbsensiKu" style="display:none">
-        <div style="display:flex;align-items:center;gap:14px;padding:4px 0">
-          <div id="absKuLogoWrap" style="width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,#7c3aed,#4f46e5);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;overflow:hidden">
-            <img id="absKuLogo" src="" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:16px;display:none">
+        <!-- Header kartu -->
+        <div style="display:flex;align-items:center;gap:14px;padding:4px 0;margin-bottom:14px">
+          <div id="absKuLogoWrap" style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#7c3aed,#4f46e5);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;overflow:hidden">
+            <img id="absKuLogo" src="" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:14px;display:none">
             <span id="absKuEmoji">📲</span>
           </div>
           <div style="flex:1">
             <div class="absku-name" style="font-size:15px;font-weight:800;color:var(--text)">AbsensiKu</div>
-            <div style="font-size:12px;color:var(--text-muted,#94a3b8);margin-top:2px">Aplikasi absensi sekolah</div>
+            <div style="font-size:12px;color:var(--text-muted,#94a3b8);margin-top:1px">Log kehadiran harian</div>
           </div>
-          <button onclick="bukaAbsensiKu()" style="background:var(--primary,#3b82f6);color:#fff;border:none;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer">Buka →</button>
+        </div>
+
+        <!-- Log Check In & Check Out hari ini -->
+        <div id="absKuLogHari" style="margin-bottom:12px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <!-- Check In -->
+            <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:12px;padding:12px;text-align:center">
+              <div style="font-size:11px;font-weight:700;color:#15803d;margin-bottom:4px">✅ CHECK IN</div>
+              <div id="absKuCheckIn" style="font-size:18px;font-weight:800;color:#166534">--:--</div>
+              <div id="absKuStatusIn" style="font-size:10px;color:#4ade80;margin-top:2px">Belum tercatat</div>
+            </div>
+            <!-- Check Out -->
+            <div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:12px;padding:12px;text-align:center">
+              <div style="font-size:11px;font-weight:700;color:#1d4ed8;margin-bottom:4px">🚪 CHECK OUT</div>
+              <div id="absKuCheckOut" style="font-size:18px;font-weight:800;color:#1e40af">--:--</div>
+              <div id="absKuStatusOut" style="font-size:10px;color:#93c5fd;margin-top:2px">Belum tercatat</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Riwayat 5 hari terakhir -->
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--text-muted,#94a3b8);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Riwayat 5 Hari Terakhir</div>
+          <div id="absKuRiwayat" style="font-size:12px;color:var(--text-muted,#94a3b8);text-align:center;padding:8px 0">Memuat...</div>
         </div>
       </div>
 
@@ -943,6 +967,106 @@ function bukaAbsensiKu() {
   const link = _absKuUrl.startsWith('http') ? _absKuUrl : 'https://' + _absKuUrl;
   window.open(link, '_blank', 'noopener');
 }
+
+// ── Load log absensi RFID dari Supabase ──────────────────────
+async function loadAbsensiKuLog() {
+  if (!SISWA?.nisn && !SISWA?.id) return;
+
+  try {
+    const today = new Date().toISOString().slice(0,10);
+    // Ambil 5 hari terakhir
+    const d5ago = new Date(Date.now() - 4*86400000).toISOString().slice(0,10);
+
+    let q = db.from('absensi_rfid')
+      .select('tipe,waktu,tanggal,status,lokasi')
+      .gte('tanggal', d5ago)
+      .order('waktu', {ascending: false});
+
+    // Filter by nisn atau siswa_id
+    if (SISWA.nisn) q = q.eq('nisn', SISWA.nisn);
+    else q = q.eq('siswa_id', SISWA.id);
+
+    const { data: logs, error } = await q;
+    if (error) { console.warn('absensi_rfid error:', error.message); return; }
+
+    // ── Update Check In & Out hari ini ──
+    const hariIni = (logs||[]).filter(l => l.tanggal === today);
+    const masuk   = hariIni.find(l => l.tipe === 'masuk');
+    const keluar  = hariIni.find(l => l.tipe === 'keluar');
+
+    const fmtWaktu = iso => {
+      if (!iso) return '--:--';
+      const d = new Date(iso);
+      return d.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+    };
+
+    const ciEl = document.getElementById('absKuCheckIn');
+    const coEl = document.getElementById('absKuCheckOut');
+    const siEl = document.getElementById('absKuStatusIn');
+    const soEl = document.getElementById('absKuStatusOut');
+
+    if (ciEl) ciEl.textContent = masuk ? fmtWaktu(masuk.waktu) : '--:--';
+    if (siEl) siEl.textContent = masuk ? (masuk.status||'Hadir') : 'Belum tercatat';
+    if (coEl) coEl.textContent = keluar ? fmtWaktu(keluar.waktu) : '--:--';
+    if (soEl) soEl.textContent = keluar ? 'Sudah pulang' : 'Belum tercatat';
+
+    // ── Riwayat 5 hari ──
+    const rEl = document.getElementById('absKuRiwayat');
+    if (!rEl) return;
+    if (!logs || !logs.length) {
+      rEl.innerHTML = '<div style="text-align:center;padding:8px;color:#94a3b8">Belum ada riwayat</div>';
+      return;
+    }
+
+    // Group per tanggal
+    const byDate = {};
+    logs.forEach(l => {
+      if (!byDate[l.tanggal]) byDate[l.tanggal] = {};
+      byDate[l.tanggal][l.tipe] = l;
+    });
+
+    const rows = Object.keys(byDate).sort((a,b)=>b.localeCompare(a)).slice(0,5).map(tgl => {
+      const d   = byDate[tgl];
+      const in_ = d.masuk  ? fmtWaktu(d.masuk.waktu)  : '--:--';
+      const out_ = d.keluar ? fmtWaktu(d.keluar.waktu) : '--:--';
+      const tglFmt = new Date(tgl+'T00:00:00').toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short'});
+      const isToday = tgl === today;
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border,#f1f5f9);${isToday?'font-weight:700;':''}">
+        <div style="font-size:12px;color:var(--text,#0f172a);min-width:90px">${isToday?'🔵 ':''} ${tglFmt}</div>
+        <div style="display:flex;gap:12px">
+          <span style="font-size:11px;color:#15803d">✅ ${in_}</span>
+          <span style="font-size:11px;color:#1d4ed8">🚪 ${out_}</span>
+        </div>
+      </div>`;
+    }).join('');
+
+    rEl.innerHTML = rows || '<div style="text-align:center;color:#94a3b8">Tidak ada data</div>';
+
+  } catch(e) {
+    console.warn('loadAbsensiKuLog:', e);
+  }
+}
+
+// ── Realtime: update log saat ada tap RFID baru ──────────────
+let _rfidChannel = null;
+function subscribeAbsensiRfid(nisn, siswaId) {
+  if (_rfidChannel) { try { db.removeChannel(_rfidChannel); } catch(e){} }
+  try {
+    _rfidChannel = db.channel('absensi_rfid_siswa')
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'absensi_rfid'
+      }, payload => {
+        const n = payload.new;
+        // Filter manual
+        if (nisn && String(n.nisn) !== String(nisn)) return;
+        else if (!nisn && String(n.siswa_id) !== String(siswaId)) return;
+        // Ada tap baru → reload log
+        loadAbsensiKuLog();
+      })
+      .subscribe();
+  } catch(e) { console.warn('subscribeAbsensiRfid:', e); }
+}
+// ─────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────
 
 function goTab(tab) {
@@ -1208,8 +1332,10 @@ async function loadChat() {
   subscribeChat();
   // Mulai pantau realtime status izin milik siswa ini
   try { subscribeIzinRealtime(SISWA?.id); } catch(e) {}
-  // Load konfigurasi AbsensiKu
+  // Load konfigurasi AbsensiKu + log RFID
   try { loadAbsensiKuConfig(); } catch(e) {}
+  try { loadAbsensiKuLog(); } catch(e) {}
+  try { subscribeAbsensiRfid(SISWA?.nisn, SISWA?.id); } catch(e) {}
 }
 
 function renderChatMsgs(msgs) {
