@@ -982,9 +982,10 @@ async function loadAbsensiKuLog() {
       .gte('tanggal', d5ago)
       .order('waktu', {ascending: false});
 
-    // Filter by nisn atau siswa_id
-    if (SISWA.nisn) q = q.eq('nisn', SISWA.nisn);
-    else q = q.eq('siswa_id', SISWA.id);
+    // Filter by nis (kolom di APEL JUMBO adalah 'nis' bukan 'nisn')
+    const _nis = SISWA.nis || SISWA.nisn || null;
+    if (_nis) q = q.eq('nisn', _nis);
+    else if (SISWA.id) q = q.eq('siswa_id', SISWA.id);
 
     const { data: logs, error } = await q;
     if (error) { console.warn('absensi_rfid error:', error.message); return; }
@@ -1057,9 +1058,13 @@ function subscribeAbsensiRfid(nisn, siswaId) {
         event: 'INSERT', schema: 'public', table: 'absensi_rfid'
       }, payload => {
         const n = payload.new;
-        // Filter manual
-        if (nisn && String(n.nisn) !== String(nisn)) return;
-        else if (!nisn && String(n.siswa_id) !== String(siswaId)) return;
+        // Filter manual — cocokkan dengan nisn atau siswa_id
+        const myNis = String(nisn || '');
+        const nNisn = String(n.nisn || '');
+        const nSid  = String(n.siswa_id || '');
+        const nSid2 = String(siswaId || '');
+        if (myNis && nNisn && myNis !== nNisn) return;
+        else if ((!myNis || !nNisn) && nSid2 && nSid !== nSid2) return;
         // Ada tap baru → reload log
         loadAbsensiKuLog();
       })
@@ -1406,7 +1411,7 @@ async function loadChat() {
   // Load konfigurasi AbsensiKu + log RFID
   try { loadAbsensiKuConfig(); } catch(e) {}
   try { loadAbsensiKuLog(); } catch(e) {}
-  try { subscribeAbsensiRfid(SISWA?.nisn, SISWA?.id); } catch(e) {}
+  try { subscribeAbsensiRfid(SISWA?.nis || SISWA?.nisn, SISWA?.id); } catch(e) {}
   // Aktifkan realtime untuk semua fitur
   try { startAllRealtime(); } catch(e) {}
 }
