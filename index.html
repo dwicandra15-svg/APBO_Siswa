@@ -959,6 +959,13 @@ async function loadAbsensiKuConfig() {
   }
 }
 
+// Pastikan subscribe RFID aktif setelah config loaded
+function ensureRfidSubscribe() {
+  if (!_rfidChannel || _rfidChannel.state === 'closed') {
+    subscribeAbsensiRfid(SISWA?.nis || SISWA?.nisn, SISWA?.id);
+  }
+}
+
 function bukaAbsensiKu() {
   if (!_absKuUrl) {
     alert('URL AbsensiKu belum dikonfigurasi oleh guru.');
@@ -1050,25 +1057,47 @@ async function loadAbsensiKuLog() {
 
 // ── Realtime: update log saat ada tap RFID baru ──────────────
 let _rfidChannel = null;
+let _rfidRetryTimer = null;
+
 function subscribeAbsensiRfid(nisn, siswaId) {
-  if (_rfidChannel) { try { db.removeChannel(_rfidChannel); } catch(e){} }
+  if (_rfidChannel) {
+    try { db.removeChannel(_rfidChannel); } catch(e){}
+    _rfidChannel = null;
+  }
+  if (_rfidRetryTimer) { clearTimeout(_rfidRetryTimer); _rfidRetryTimer = null; }
+
+  const _myNis = String(nisn || '');
+  const _mySid = String(siswaId || '');
+
+  // Nama channel unik per siswa
+  const chName = 'rfid_' + (_myNis || _mySid || 'guest');
+
   try {
-    _rfidChannel = db.channel('absensi_rfid_siswa')
+    _rfidChannel = db.channel(chName)
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public', table: 'absensi_rfid'
       }, payload => {
         const n = payload.new;
-        // Filter manual — cocokkan dengan nisn atau siswa_id
-        const myNis = String(nisn || '');
         const nNisn = String(n.nisn || '');
         const nSid  = String(n.siswa_id || '');
-        const nSid2 = String(siswaId || '');
-        if (myNis && nNisn && myNis !== nNisn) return;
-        else if ((!myNis || !nNisn) && nSid2 && nSid !== nSid2) return;
-        // Ada tap baru → reload log
+
+        // Filter: cocokkan milik siswa ini
+        const matchNis = _myNis && nNisn && _myNis === nNisn;
+        const matchSid = _mySid && nSid   && _mySid === nSid;
+        if (!matchNis && !matchSid) return;
+
+        // Ada tap baru milik siswa ini → reload log
         loadAbsensiKuLog();
       })
-      .subscribe();
+      .subscribe(status => {
+        console.log('RFID realtime status:', status);
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          // Retry setelah 5 detik
+          _rfidRetryTimer = setTimeout(() => {
+            subscribeAbsensiRfid(nisn, siswaId);
+          }, 5000);
+        }
+      });
   } catch(e) { console.warn('subscribeAbsensiRfid:', e); }
 }
 // ─────────────────────────────────────────────────────────────
