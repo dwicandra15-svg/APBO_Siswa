@@ -6,7 +6,30 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="APBO Siswa">
+<meta name="theme-color" content="#3b82f6">
 <title>APBO Siswa</title>
+<script>
+// ── PWA Manifest inline ───────────────────────────────────────
+(function() {
+  const manifest = {
+    "name": "APBO Siswa",
+    "short_name": "APBO Siswa",
+    "description": "Portal Akademik Siswa & Orang Tua",
+    "start_url": "https://dwicandra15-svg.github.io/APBO_Siswa/",
+    "display": "standalone",
+    "background_color": "#f8fafc",
+    "theme_color": "#3b82f6",
+    "orientation": "portrait",
+    "icons": [
+      { "src": "https://dwicandra15-svg.github.io/APBO_Siswa/icon-192.png", "sizes": "192x192", "type": "image/png" },
+      { "src": "https://dwicandra15-svg.github.io/APBO_Siswa/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    ]
+  };
+  const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+  document.head.appendChild(Object.assign(document.createElement('link'), {rel:'manifest', href:URL.createObjectURL(blob)}));
+})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
@@ -403,6 +426,7 @@ tbody tr:last-child td{border-bottom:none}
       </div>
     </div>
     <div class="tb-right">
+      <button id="apboPwaBtn" onclick="apboPwaInstall()" title="Install App" style="display:none;background:rgba(59,130,246,.15);border:1.5px solid rgba(59,130,246,.3);border-radius:8px;padding:5px 9px;color:var(--primary,#3b82f6);font-size:11px;font-weight:700;cursor:pointer;margin-right:4px">📲 Install</button>
       <div class="bell-btn" onclick="toggleNotif()" id="bellBtn">
         🔔<div class="bell-dot" id="bellDot"></div>
       </div>
@@ -2234,6 +2258,53 @@ try {
   const so=sessionStorage.getItem('apbo_ortu');
   if(so){const sess=JSON.parse(so);if(sess.mode==='ortu')setTimeout(()=>masukPortalOrtu(sess),600);}
 } catch(e){sessionStorage.removeItem('apbo_ortu');}
+
+// ── PWA Service Worker inline ────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    const swCode = `
+const CACHE = 'apbosiswa-v1';
+self.addEventListener('install', e => { self.skipWaiting(); });
+self.addEventListener('activate', e => { e.waitUntil(clients.claim()); });
+self.addEventListener('fetch', e => {
+  if (e.request.method !== 'GET') return;
+  if (e.request.url.includes('supabase.co')) return;
+  e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+});`;
+    const blob = new Blob([swCode], {type:'text/javascript'});
+    navigator.serviceWorker.register(URL.createObjectURL(blob), {scope:'/'})
+      .then(() => console.log('[SW] APBO Siswa ✅'))
+      .catch(e => console.warn('[SW] Gagal:', e));
+  });
+}
+
+// ── PWA Install Prompt ────────────────────────────────────────
+let _pwaPromptApbo = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _pwaPromptApbo = e;
+  const btn = document.getElementById('apboPwaBtn');
+  if (btn) btn.style.display = '';
+});
+function apboPwaInstall() {
+  if (!_pwaPromptApbo) {
+    alert('Untuk install APBO Siswa:\n1. Buka menu browser (⋮)\n2. Pilih "Add to Home Screen" atau "Install App"');
+    return;
+  }
+  _pwaPromptApbo.prompt();
+  _pwaPromptApbo.userChoice.then(r => {
+    if (r.outcome === 'accepted') {
+      const btn = document.getElementById('apboPwaBtn');
+      if (btn) btn.style.display = 'none';
+    }
+    _pwaPromptApbo = null;
+  });
+}
+window.addEventListener('appinstalled', () => {
+  const btn = document.getElementById('apboPwaBtn');
+  if (btn) btn.style.display = 'none';
+});
+// ─────────────────────────────────────────────────────────────
 </script>
 </body>
 </html>
