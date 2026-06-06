@@ -12,22 +12,7 @@
 <script>
 // ── PWA Manifest inline ───────────────────────────────────────
 (function() {
-  const manifest = {
-    "name": "APBO Siswa",
-    "short_name": "APBO Siswa",
-    "description": "Portal Akademik Siswa & Orang Tua",
-    "start_url": "https://dwicandra15-svg.github.io/APBO_Siswa/",
-    "display": "standalone",
-    "background_color": "#f8fafc",
-    "theme_color": "#3b82f6",
-    "orientation": "portrait",
-    "icons": [
-      { "src": "https://dwicandra15-svg.github.io/APBO_Siswa/icon-192.png", "sizes": "192x192", "type": "image/png" },
-      { "src": "https://dwicandra15-svg.github.io/APBO_Siswa/icon-512.png", "sizes": "512x512", "type": "image/png" }
-    ]
-  };
-  const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
-  document.head.appendChild(Object.assign(document.createElement('link'), {rel:'manifest', href:URL.createObjectURL(blob)}));
+  document.head.appendChild(Object.assign(document.createElement('link'), {rel:'manifest', href:'/APBO_Siswa/manifest.json'}));
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
