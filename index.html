@@ -6,15 +6,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="APBO Siswa">
-<meta name="theme-color" content="#3b82f6">
 <title>APBO Siswa</title>
-<script>
-// ── PWA Manifest inline ───────────────────────────────────────
-(function() {
-  document.head.appendChild(Object.assign(document.createElement('link'), {rel:'manifest', href:'/APBO_Siswa/manifest.json'}));
-})();
-</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
@@ -411,7 +403,6 @@ tbody tr:last-child td{border-bottom:none}
       </div>
     </div>
     <div class="tb-right">
-      <button id="apboPwaBtn" onclick="apboPwaInstall()" title="Install App" style="display:none;background:rgba(59,130,246,.15);border:1.5px solid rgba(59,130,246,.3);border-radius:8px;padding:5px 9px;color:var(--primary,#3b82f6);font-size:11px;font-weight:700;cursor:pointer;margin-right:4px">📲 Install</button>
       <div class="bell-btn" onclick="toggleNotif()" id="bellBtn">
         🔔<div class="bell-dot" id="bellDot"></div>
       </div>
@@ -660,7 +651,7 @@ tbody tr:last-child td{border-bottom:none}
     </div>
     <div class="tb-right">
       <button onclick="ortuGantiPassword()" style="background:rgba(255,255,255,.15);border:none;border-radius:8px;padding:6px 10px;color:#fff;font-size:11px;font-weight:700;cursor:pointer">🔑 Ganti PW</button>
-      <button onclick="ortuLogout()" style="background:rgba(255,255,255,.15);border:none;border-radius:8px;padding:6px 10px;color:#fff;font-size:11px;font-weight:700;cursor:pointer">Keluar</button>
+      <button onclick="ortuLogout()" style="background:rgba(220,38,38,.8);border:none;border-radius:8px;padding:6px 10px;color:#fff;font-size:11px;font-weight:700;cursor:pointer">🚪 Keluar</button>
     </div>
   </div>
 
@@ -968,13 +959,6 @@ async function loadAbsensiKuConfig() {
   }
 }
 
-// Pastikan subscribe RFID aktif setelah config loaded
-function ensureRfidSubscribe() {
-  if (!_rfidChannel || _rfidChannel.state === 'closed') {
-    subscribeAbsensiRfid(SISWA?.nis || SISWA?.nisn, SISWA?.id);
-  }
-}
-
 function bukaAbsensiKu() {
   if (!_absKuUrl) {
     alert('URL AbsensiKu belum dikonfigurasi oleh guru.');
@@ -1066,47 +1050,25 @@ async function loadAbsensiKuLog() {
 
 // ── Realtime: update log saat ada tap RFID baru ──────────────
 let _rfidChannel = null;
-let _rfidRetryTimer = null;
-
 function subscribeAbsensiRfid(nisn, siswaId) {
-  if (_rfidChannel) {
-    try { db.removeChannel(_rfidChannel); } catch(e){}
-    _rfidChannel = null;
-  }
-  if (_rfidRetryTimer) { clearTimeout(_rfidRetryTimer); _rfidRetryTimer = null; }
-
-  const _myNis = String(nisn || '');
-  const _mySid = String(siswaId || '');
-
-  // Nama channel unik per siswa
-  const chName = 'rfid_' + (_myNis || _mySid || 'guest');
-
+  if (_rfidChannel) { try { db.removeChannel(_rfidChannel); } catch(e){} }
   try {
-    _rfidChannel = db.channel(chName)
+    _rfidChannel = db.channel('absensi_rfid_siswa')
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public', table: 'absensi_rfid'
       }, payload => {
         const n = payload.new;
+        // Filter manual — cocokkan dengan nisn atau siswa_id
+        const myNis = String(nisn || '');
         const nNisn = String(n.nisn || '');
         const nSid  = String(n.siswa_id || '');
-
-        // Filter: cocokkan milik siswa ini
-        const matchNis = _myNis && nNisn && _myNis === nNisn;
-        const matchSid = _mySid && nSid   && _mySid === nSid;
-        if (!matchNis && !matchSid) return;
-
-        // Ada tap baru milik siswa ini → reload log
+        const nSid2 = String(siswaId || '');
+        if (myNis && nNisn && myNis !== nNisn) return;
+        else if ((!myNis || !nNisn) && nSid2 && nSid !== nSid2) return;
+        // Ada tap baru → reload log
         loadAbsensiKuLog();
       })
-      .subscribe(status => {
-        console.log('RFID realtime status:', status);
-        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          // Retry setelah 5 detik
-          _rfidRetryTimer = setTimeout(() => {
-            subscribeAbsensiRfid(nisn, siswaId);
-          }, 5000);
-        }
-      });
+      .subscribe();
   } catch(e) { console.warn('subscribeAbsensiRfid:', e); }
 }
 // ─────────────────────────────────────────────────────────────
@@ -1223,7 +1185,7 @@ async function loadAbsensi() {
   const bulan = document.getElementById('filterBulan').value;
   const el = document.getElementById('absensiContent');
   el.innerHTML = '<div class="load-spin"></div>';
-  let q = db.from('absensi').select('*').eq('siswa_id',SISWA.id).order('tanggal',{ascending:false});
+  let q = db.from('absensi').select('*,mapel:mapel_id(nama)').eq('siswa_id',SISWA.id).order('tanggal',{ascending:false});
   if (bulan) { const yr=new Date().getFullYear(); q=q.gte('tanggal',`${yr}-${bulan}-01`).lte('tanggal',`${yr}-${bulan}-31`); }
   const { data } = await q;
   const r = data||[];
@@ -1238,8 +1200,12 @@ async function loadAbsensi() {
     <div class="stat-box" style="background:var(--blue-l)"><div class="stat-val" style="color:var(--blue)">${I}</div><div class="stat-lbl" style="color:var(--blue)">Izin</div></div>
     <div class="stat-box" style="background:var(--red-l)"><div class="stat-val" style="color:var(--red)">${A}</div><div class="stat-lbl" style="color:var(--red)">Alpha</div></div>
   </div>
-  <div class="tbl-wrap"><table><thead><tr><th>Tanggal</th><th>Hari</th><th>Status</th></tr></thead><tbody>
-  ${r.map(x=>{const hr=x.tanggal?new Date(x.tanggal).toLocaleDateString('id-ID',{weekday:'short'}):'-';return`<tr><td>${x.tanggal||'-'}</td><td style="color:var(--text3)">${hr}</td><td><span class="badge ${bMap[x.status]||'b-p'}">${lMap[x.status]||x.status}</span></td></tr>`;}).join('')}
+  <div class="tbl-wrap"><table><thead><tr><th>Tanggal</th><th>Hari</th><th>Mata Pelajaran</th><th>Status</th></tr></thead><tbody>
+  ${r.map(x=>{
+    const hr=x.tanggal?new Date(x.tanggal+'T00:00:00').toLocaleDateString('id-ID',{weekday:'short'}):'-';
+    const mapelNm = x.mapel?.nama || '—';
+    return`<tr><td>${x.tanggal||'-'}</td><td style="color:var(--text3)">${hr}</td><td style="font-size:12px;color:var(--text2)">${mapelNm}</td><td><span class="badge ${bMap[x.status]||'b-p'}">${lMap[x.status]||x.status}</span></td></tr>`;
+  }).join('')}
   </tbody></table></div>`;
 }
 
@@ -2121,18 +2087,22 @@ function ortuDeleteIzin(id) {
 
 async function ortuLoadAbsensi() {
   const s = _ortuSession?.siswa; if (!s) return;
-  const { data } = await db.from('absensi').select('*').eq('siswa_id', s.id).order('tanggal', {ascending:false});
+  const { data } = await db.from('absensi').select('*,mapel:mapel_id(nama)').eq('siswa_id', s.id).order('tanggal', {ascending:false});
   const rec = data||[];
   document.getElementById('ortuH').textContent = rec.filter(r=>r.status==='H').length;
   document.getElementById('ortuS').textContent = rec.filter(r=>r.status==='S').length;
   document.getElementById('ortuI').textContent = rec.filter(r=>r.status==='I').length;
   document.getElementById('ortuA').textContent = rec.filter(r=>r.status==='A').length;
-  document.getElementById('ortuAbsenList').innerHTML = rec.slice(0,30).map(r => {
+  document.getElementById('ortuAbsenList').innerHTML = rec.slice(0,50).map(r => {
     const tgl = new Date(r.tanggal+'T00:00:00').toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});
     const map = {H:['Hadir','#10b981'],S:['Sakit','#f59e0b'],I:['Izin','#3b82f6'],A:['Alfa','#ef4444']};
     const [lbl,w] = map[r.status]||['—','#64748b'];
-    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
-      <span style="font-size:12px">${tgl}</span>
+    const mapelNm = r.mapel?.nama || '';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)">
+      <div>
+        <div style="font-size:12px;font-weight:600">${tgl}</div>
+        ${mapelNm ? `<div style="font-size:11px;color:#64748b;margin-top:2px">📚 ${mapelNm}</div>` : ''}
+      </div>
       <span style="background:${w}22;color:${w};padding:2px 10px;border-radius:99px;font-size:11px;font-weight:700">${lbl}</span>
     </div>`;
   }).join('') || '<div style="text-align:center;padding:20px;color:var(--text2)">Belum ada data</div>';
@@ -2140,17 +2110,38 @@ async function ortuLoadAbsensi() {
 
 async function ortuLoadNilai() {
   const s = _ortuSession?.siswa; if (!s) return;
-  const { data } = await db.from('nilai').select('*').eq('siswa_id', s.id);
-  const rec = data||[];
-  if (!rec.length) { document.getElementById('ortuNilaiList').innerHTML='<div style="text-align:center;padding:20px;color:var(--text2)">Belum ada nilai</div>'; return; }
-  const byKat = {};
-  rec.forEach(r=>{ const k=r.kategori||'Lainnya'; if(!byKat[k])byKat[k]=[]; byKat[k].push(r); });
-  document.getElementById('ortuNilaiList').innerHTML = Object.entries(byKat).map(([kat,items])=>{
-    const avg=Math.round(items.reduce((s,r)=>s+(r.nilai||0),0)/items.length);
-    const w=avg>=80?'#10b981':avg>=70?'#f59e0b':'#ef4444';
-    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
-      <div><div style="font-size:13px;font-weight:700">${kat}</div><div style="font-size:11px;color:var(--text2)">${items.length} pertemuan</div></div>
-      <div style="background:${w}22;color:${w};font-size:18px;font-weight:800;padding:4px 14px;border-radius:10px">${avg}</div>
+  const el = document.getElementById('ortuNilaiList');
+  el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text2)">Memuat nilai...</div>';
+  const [nilaiRes, mapelRes] = await Promise.all([
+    db.from('nilai').select('*').eq('siswa_id', s.id).order('mapel_id'),
+    db.from('mapel').select('id,nama')
+  ]);
+  const rec = nilaiRes.data || [];
+  const mapelMap = {};
+  (mapelRes.data||[]).forEach(m => mapelMap[m.id] = m.nama);
+  if (!rec.length) { el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text2)">Belum ada nilai</div>'; return; }
+  // Group by mapel_id → kategori
+  const byMapel = {};
+  rec.forEach(r => {
+    const mid = r.mapel_id || 0;
+    if (!byMapel[mid]) byMapel[mid] = {};
+    const kat = r.kategori || 'Umum';
+    if (!byMapel[mid][kat]) byMapel[mid][kat] = [];
+    byMapel[mid][kat].push(r.skor || 0);
+  });
+  el.innerHTML = Object.entries(byMapel).map(([mid, kats]) => {
+    const nama = mapelMap[mid] || 'Mapel Lain';
+    const rows = Object.entries(kats).map(([kat, skors]) => {
+      const avg = Math.round(skors.reduce((a,b)=>a+b,0)/skors.length);
+      const w = avg>=80?'#10b981':avg>=70?'#f59e0b':'#ef4444';
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f0f0f0">
+        <div style="font-size:12px;color:var(--text2)">${kat} <span style="color:#94a3b8">(${skors.length}x)</span></div>
+        <div style="background:${w}22;color:${w};font-size:14px;font-weight:800;padding:3px 12px;border-radius:8px">${avg}</div>
+      </div>`;
+    }).join('');
+    return `<div style="background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.08)">
+      <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid var(--primary-l,#e8f0fe)">📚 ${nama}</div>
+      ${rows}
     </div>`;
   }).join('');
 }
@@ -2243,53 +2234,6 @@ try {
   const so=sessionStorage.getItem('apbo_ortu');
   if(so){const sess=JSON.parse(so);if(sess.mode==='ortu')setTimeout(()=>masukPortalOrtu(sess),600);}
 } catch(e){sessionStorage.removeItem('apbo_ortu');}
-
-// ── PWA Service Worker inline ────────────────────────────────
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    const swCode = `
-const CACHE = 'apbosiswa-v1';
-self.addEventListener('install', e => { self.skipWaiting(); });
-self.addEventListener('activate', e => { e.waitUntil(clients.claim()); });
-self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET') return;
-  if (e.request.url.includes('supabase.co')) return;
-  e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
-});`;
-    const blob = new Blob([swCode], {type:'text/javascript'});
-    navigator.serviceWorker.register(URL.createObjectURL(blob), {scope:'/'})
-      .then(() => console.log('[SW] APBO Siswa ✅'))
-      .catch(e => console.warn('[SW] Gagal:', e));
-  });
-}
-
-// ── PWA Install Prompt ────────────────────────────────────────
-let _pwaPromptApbo = null;
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  _pwaPromptApbo = e;
-  const btn = document.getElementById('apboPwaBtn');
-  if (btn) btn.style.display = '';
-});
-function apboPwaInstall() {
-  if (!_pwaPromptApbo) {
-    alert('Untuk install APBO Siswa:\n1. Buka menu browser (⋮)\n2. Pilih "Add to Home Screen" atau "Install App"');
-    return;
-  }
-  _pwaPromptApbo.prompt();
-  _pwaPromptApbo.userChoice.then(r => {
-    if (r.outcome === 'accepted') {
-      const btn = document.getElementById('apboPwaBtn');
-      if (btn) btn.style.display = 'none';
-    }
-    _pwaPromptApbo = null;
-  });
-}
-window.addEventListener('appinstalled', () => {
-  const btn = document.getElementById('apboPwaBtn');
-  if (btn) btn.style.display = 'none';
-});
-// ─────────────────────────────────────────────────────────────
 </script>
 </body>
 </html>
