@@ -338,13 +338,14 @@ tbody tr:last-child td{border-bottom:none}
 .ortu-tab.active{background:var(--primary);border-color:var(--primary);color:#fff}
 .ortu-sec{display:none}
 .ortu-sec.active{display:block}
-.ortu-kal-day{aspect-ratio:1;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:3px 1px;min-height:30px}
-.ortu-kal-day.today{background:var(--primary)}
+/* Kalender ortu — disamakan dengan kalender siswa */
+.ortu-kal-day{aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:4px 2px;position:relative;min-height:34px}
+.ortu-kal-day.today{background:var(--primary);border-radius:8px}
 .ortu-kal-day.today .okd-num{color:#fff;font-weight:800}
 .ortu-kal-day.other{opacity:.3}
-.okd-num{font-size:11px;font-weight:600;color:var(--text);line-height:1.3}
-.okd-dots{display:flex;gap:2px;justify-content:center;margin-top:1px}
-.okd-dot{width:4px;height:4px;border-radius:50%}
+.okd-num{font-size:12px;font-weight:600;color:var(--text);line-height:1.4}
+.okd-dots{display:flex;gap:2px;flex-wrap:wrap;justify-content:center;margin-top:2px}
+.okd-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
 
 /* ── KALENDER SISWA ── */
 .kal-s-filter{background:var(--surface);border:1.5px solid var(--border);border-radius:20px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;color:var(--text2);transition:all .15s}
@@ -719,12 +720,12 @@ tbody tr:last-child td{border-bottom:none}
       <!-- Riwayat Izin -->
       <div class="card" style="padding:16px">
         <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:12px">📋 Riwayat Surat Izin</div>
-        <div id="ortuIzinList">Memuat...</div>
+        <div id="ortuIzinList" style="text-align:center;padding:20px;color:var(--text2);font-size:12px">⏳ Memuat data izin...</div>
       </div>
     </div>
       <div class="card" style="padding:16px">
         <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:12px">📊 Rekap Nilai Anak</div>
-        <div id="ortuNilaiList">Memuat...</div>
+        <div id="ortuNilaiList" style="text-align:center;padding:20px;color:var(--text2);font-size:12px">⏳ Memuat data nilai...</div>
       </div>
     </div>
 
@@ -737,17 +738,17 @@ tbody tr:last-child td{border-bottom:none}
         </div>
         <button onclick="ortuKalNext()" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:15px">›</button>
       </div>
-      <div style="background:#fff;border-radius:12px;padding:12px;margin-bottom:10px;box-shadow:var(--shadow)">
-        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:6px">
-          <div style="text-align:center;font-size:10px;font-weight:700;color:#e02424">Min</div>
-          <div style="text-align:center;font-size:10px;font-weight:700;color:var(--text2)">Sen</div>
-          <div style="text-align:center;font-size:10px;font-weight:700;color:var(--text2)">Sel</div>
-          <div style="text-align:center;font-size:10px;font-weight:700;color:var(--text2)">Rab</div>
-          <div style="text-align:center;font-size:10px;font-weight:700;color:var(--text2)">Kam</div>
-          <div style="text-align:center;font-size:10px;font-weight:700;color:var(--text2)">Jum</div>
-          <div style="text-align:center;font-size:10px;font-weight:700;color:#1a56db">Sab</div>
+      <div style="background:var(--surface,#fff);border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:var(--shadow)">
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:8px">
+          <div style="text-align:center;font-size:11px;font-weight:700;color:#e02424;padding:4px">Min</div>
+          <div style="text-align:center;font-size:11px;font-weight:700;color:var(--text2);padding:4px">Sen</div>
+          <div style="text-align:center;font-size:11px;font-weight:700;color:var(--text2);padding:4px">Sel</div>
+          <div style="text-align:center;font-size:11px;font-weight:700;color:var(--text2);padding:4px">Rab</div>
+          <div style="text-align:center;font-size:11px;font-weight:700;color:var(--text2);padding:4px">Kam</div>
+          <div style="text-align:center;font-size:11px;font-weight:700;color:var(--text2);padding:4px">Jum</div>
+          <div style="text-align:center;font-size:11px;font-weight:700;color:#1a56db;padding:4px">Sab</div>
         </div>
-        <div id="ortuKalGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px"></div>
+        <div id="ortuKalGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px"></div>
       </div>
       <div id="ortuKalList"></div>
     </div>
@@ -757,7 +758,7 @@ tbody tr:last-child td{border-bottom:none}
       <div class="card" style="padding:16px">
         <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:4px">🚨 Status Kehadiran Anak</div>
         <div style="font-size:11px;color:var(--text2);margin-bottom:14px">Berdasarkan rekap absensi</div>
-        <div id="ortuEWSContent">Memuat...</div>
+        <div id="ortuEWSContent" style="text-align:center;padding:20px;color:var(--text2);font-size:12px">⏳ Memuat status kehadiran...</div>
       </div>
     </div>
 
@@ -1988,7 +1989,14 @@ function masukPortalOrtu(session) {
   document.getElementById('ortuSiswaName').textContent = s.nama || '—';
   document.getElementById('ortuNISN').textContent = s.nis || '—';
   ortuLoadKelas(s.kelas_id);
+  // Load semua data sekaligus agar tidak muncul "Memuat..." permanen
   ortuLoadAbsensi();
+  setTimeout(() => {
+    try { ortuLoadIzin(); } catch(e) {}
+    try { ortuLoadNilai(); } catch(e) {}
+    try { ortuLoadEWS(); } catch(e) {}
+    try { ortuLoadKalender(); } catch(e) {}
+  }, 500);
 }
 
 async function ortuLoadKelas(kelasId) {
