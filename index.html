@@ -507,15 +507,20 @@ tbody tr:last-child td{border-bottom:none}
         <div class="card-title"><span>📅 Riwayat Absensi</span>
           <button class="pdf-btn" onclick="pdfAbsensi()">📥 PDF</button>
         </div>
-        <select class="fselect" id="filterBulan" onchange="loadAbsensi()" style="margin-bottom:12px">
-          <option value="">Semua Bulan</option>
-          <option value="01">Januari</option><option value="02">Februari</option>
-          <option value="03">Maret</option><option value="04">April</option>
-          <option value="05">Mei</option><option value="06">Juni</option>
-          <option value="07">Juli</option><option value="08">Agustus</option>
-          <option value="09">September</option><option value="10">Oktober</option>
-          <option value="11">November</option><option value="12">Desember</option>
-        </select>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <select class="fselect" id="filterBulan" onchange="loadAbsensi()" style="flex:1">
+            <option value="">Semua Bulan</option>
+            <option value="01">Januari</option><option value="02">Februari</option>
+            <option value="03">Maret</option><option value="04">April</option>
+            <option value="05">Mei</option><option value="06">Juni</option>
+            <option value="07">Juli</option><option value="08">Agustus</option>
+            <option value="09">September</option><option value="10">Oktober</option>
+            <option value="11">November</option><option value="12">Desember</option>
+          </select>
+          <select class="fselect" id="filterMapelAbsensi" onchange="loadAbsensi()" style="flex:1">
+            <option value="">Semua Mapel</option>
+          </select>
+        </div>
         <div id="absensiContent"><div class="load-spin"></div></div>
       </div>
     </div>
@@ -889,6 +894,12 @@ async function loadMaster() {
   const sel = document.getElementById('filterMapel');
   sel.innerHTML = '<option value="">Semua Mata Pelajaran</option>'
     + ALL_MAPEL.map(m=>`<option value="${m.id}">${m.nama}</option>`).join('');
+  // Isi juga filter mapel di tab absensi
+  const selAbsensi = document.getElementById('filterMapelAbsensi');
+  if (selAbsensi) {
+    selAbsensi.innerHTML = '<option value="">Semua Mapel</option>'
+      + ALL_MAPEL.map(m=>`<option value="${m.id}">${m.nama}</option>`).join('');
+  }
 }
 const getNamaKelas = id => (ALL_KELAS.find(k=>k.id==id)||{}).nama||'—';
 const getNamaMapel = id => (ALL_MAPEL.find(m=>m.id==id)||{}).nama||'—';
@@ -1183,10 +1194,16 @@ async function loadAbsensiSummary() {
 }
 async function loadAbsensi() {
   const bulan = document.getElementById('filterBulan').value;
+  const mapelAbsensi = document.getElementById('filterMapelAbsensi')?.value || '';
   const el = document.getElementById('absensiContent');
   el.innerHTML = '<div class="load-spin"></div>';
   let q = db.from('absensi').select('*,mapel:mapel_id(nama)').eq('siswa_id',SISWA.id).order('tanggal',{ascending:false});
-  if (bulan) { const yr=new Date().getFullYear(); q=q.gte('tanggal',`${yr}-${bulan}-01`).lte('tanggal',`${yr}-${bulan}-31`); }
+  if (bulan) {
+    const yr = new Date().getFullYear();
+    const lastDay = new Date(yr, parseInt(bulan), 0).getDate();
+    q = q.gte('tanggal',`${yr}-${bulan}-01`).lte('tanggal',`${yr}-${bulan}-${String(lastDay).padStart(2,'0')}`);
+  }
+  if (mapelAbsensi) q = q.eq('mapel_id', mapelAbsensi);
   const { data } = await q;
   const r = data||[];
   if (!r.length) { el.innerHTML='<div class="empty"><div class="ei">📅</div><h3>Belum ada data absensi</h3></div>'; return; }
@@ -2111,39 +2128,44 @@ async function ortuLoadAbsensi() {
 async function ortuLoadNilai() {
   const s = _ortuSession?.siswa; if (!s) return;
   const el = document.getElementById('ortuNilaiList');
+  if (!el) return;
   el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text2)">Memuat nilai...</div>';
-  const [nilaiRes, mapelRes] = await Promise.all([
-    db.from('nilai').select('*').eq('siswa_id', s.id).order('mapel_id'),
-    db.from('mapel').select('id,nama')
-  ]);
-  const rec = nilaiRes.data || [];
-  const mapelMap = {};
-  (mapelRes.data||[]).forEach(m => mapelMap[m.id] = m.nama);
-  if (!rec.length) { el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text2)">Belum ada nilai</div>'; return; }
-  // Group by mapel_id → kategori
-  const byMapel = {};
-  rec.forEach(r => {
-    const mid = r.mapel_id || 0;
-    if (!byMapel[mid]) byMapel[mid] = {};
-    const kat = r.kategori || 'Umum';
-    if (!byMapel[mid][kat]) byMapel[mid][kat] = [];
-    byMapel[mid][kat].push(r.skor || 0);
-  });
-  el.innerHTML = Object.entries(byMapel).map(([mid, kats]) => {
-    const nama = mapelMap[mid] || 'Mapel Lain';
-    const rows = Object.entries(kats).map(([kat, skors]) => {
-      const avg = Math.round(skors.reduce((a,b)=>a+b,0)/skors.length);
-      const w = avg>=80?'#10b981':avg>=70?'#f59e0b':'#ef4444';
-      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f0f0f0">
-        <div style="font-size:12px;color:var(--text2)">${kat} <span style="color:#94a3b8">(${skors.length}x)</span></div>
-        <div style="background:${w}22;color:${w};font-size:14px;font-weight:800;padding:3px 12px;border-radius:8px">${avg}</div>
+  try {
+    const [nilaiRes, mapelRes] = await Promise.all([
+      db.from('nilai').select('*').eq('siswa_id', s.id),
+      db.from('mapel').select('id,nama')
+    ]);
+    const rec = nilaiRes.data || [];
+    const mapelMap = {};
+    (mapelRes.data||[]).forEach(m => mapelMap[m.id] = m.nama);
+    if (!rec.length) { el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text2)">Belum ada nilai</div>'; return; }
+    const byMapel = {};
+    rec.forEach(r => {
+      const mid = r.mapel_id || 0;
+      if (!byMapel[mid]) byMapel[mid] = {};
+      const kat = r.kategori || 'Umum';
+      if (!byMapel[mid][kat]) byMapel[mid][kat] = [];
+      const val = r.skor ?? r.nilai ?? 0;
+      byMapel[mid][kat].push(Number(val));
+    });
+    el.innerHTML = Object.entries(byMapel).map(([mid, kats]) => {
+      const nama = mapelMap[mid] || 'Mapel Lain';
+      const rows = Object.entries(kats).map(([kat, skors]) => {
+        const avg = Math.round(skors.reduce((a,b)=>a+b,0)/skors.length);
+        const w = avg>=80?'#10b981':avg>=70?'#f59e0b':'#ef4444';
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f0f0f0">
+          <div style="font-size:12px;color:var(--text2)">${kat} <span style="color:#94a3b8">(${skors.length}x)</span></div>
+          <div style="background:${w}22;color:${w};font-size:14px;font-weight:800;padding:3px 12px;border-radius:8px">${avg}</div>
+        </div>`;
+      }).join('');
+      return `<div style="background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.08)">
+        <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid var(--primary-l,#e8f0fe)">📚 ${nama}</div>
+        ${rows}
       </div>`;
     }).join('');
-    return `<div style="background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.08)">
-      <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid var(--primary-l,#e8f0fe)">📚 ${nama}</div>
-      ${rows}
-    </div>`;
-  }).join('');
+  } catch(e) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text2)">Gagal memuat nilai</div>';
+  }
 }
 
 async function ortuLoadKalender() {
