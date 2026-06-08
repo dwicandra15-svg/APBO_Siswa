@@ -723,6 +723,9 @@ tbody tr:last-child td{border-bottom:none}
         <div id="ortuIzinList" style="text-align:center;padding:20px;color:var(--text2);font-size:12px">⏳ Memuat data izin...</div>
       </div>
     </div>
+
+    <!-- Konten Nilai -->
+    <div id="osec-nilai" class="ortu-sec">
       <div class="card" style="padding:16px">
         <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:12px">📊 Rekap Nilai Anak</div>
         <div id="ortuNilaiList" style="text-align:center;padding:20px;color:var(--text2);font-size:12px">⏳ Memuat data nilai...</div>
@@ -2220,21 +2223,58 @@ function ortuKalNext(){if(KAL_ORTU.bulan===11){KAL_ORTU.bulan=0;KAL_ORTU.tahun++
 
 async function ortuLoadEWS() {
   const s = _ortuSession?.siswa; if (!s) return;
-  const { data } = await db.from('absensi').select('*').eq('siswa_id', s.id);
-  const rec = data||[];
-  const A=rec.filter(r=>r.status==='A').length;
-  const total=rec.length;
-  const pct=total?Math.round(rec.filter(r=>r.status==='H').length/total*100):100;
-  const [status,w,icon]=A>=5?['KRITIS','#ef4444','🔴']:A>=3?['WARNING','#f59e0b','⚠️']:['AMAN','#10b981','✅'];
-  document.getElementById('ortuEWSContent').innerHTML=`
-    <div style="text-align:center;padding:20px 0">
-      <div style="font-size:48px">${icon}</div>
-      <div style="font-size:22px;font-weight:800;color:${w};margin-top:6px">${status}</div>
-      <div style="font-size:13px;color:var(--text2);margin-top:6px">Total Alfa: <strong style="color:${w}">${A}x</strong> · Kehadiran: <strong>${pct}%</strong></div>
-    </div>
-    <div style="background:${w}11;border-radius:10px;padding:12px;font-size:12px;color:${w};font-weight:600;text-align:center">
-      ${A>=5?'⚠️ Segera hubungi wali kelas':A>=3?'📢 Kehadiran perlu ditingkatkan':'✅ Kehadiran dalam kondisi baik'}
-    </div>`;
+  const el = document.getElementById('ortuEWSContent');
+  if (el) el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text2)">⏳ Memuat...</div>';
+
+  const { data } = await db.from('absensi')
+    .select('status,mapel_id,tanggal,mapel(nama)')
+    .eq('siswa_id', s.id);
+  const rec = data || [];
+
+  const A     = rec.filter(r => r.status === 'A').length;
+  const total = rec.length;
+  const pct   = total ? Math.round(rec.filter(r => r.status === 'H').length / total * 100) : 100;
+  const [status, w, icon] = A >= 5 ? ['KRITIS','#ef4444','🔴'] : A >= 3 ? ['WARNING','#f59e0b','⚠️'] : ['AMAN','#10b981','✅'];
+
+  // Hitung alpha PER MAPEL
+  const byMapel = {};
+  rec.filter(r => r.status === 'A').forEach(r => {
+    const nama = r.mapel?.nama || (r.mapel_id ? 'Mapel #'+r.mapel_id : 'Tanpa Mapel');
+    byMapel[nama] = (byMapel[nama] || 0) + 1;
+  });
+
+  // Render detail per mapel
+  const detailMapel = Object.entries(byMapel)
+    .sort((a, b) => b[1] - a[1])
+    .map(([nama, jml]) => {
+      const barW = Math.min(100, jml * 20);
+      const barC = jml >= 5 ? '#ef4444' : jml >= 3 ? '#f59e0b' : '#10b981';
+      return '<div style="margin-bottom:10px">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
+        + '<div style="font-size:12px;font-weight:700;color:var(--text)">📚 '+nama+'</div>'
+        + '<div style="font-size:12px;font-weight:800;color:'+barC+'">'+jml+'x Alfa</div>'
+        + '</div>'
+        + '<div style="background:#f1f5f9;border-radius:99px;height:6px;overflow:hidden">'
+        + '<div style="background:'+barC+';width:'+barW+'%;height:100%;border-radius:99px"></div>'
+        + '</div></div>';
+    }).join('');
+
+  const detailBlock = Object.keys(byMapel).length > 0
+    ? '<div style="margin-top:14px">'
+      + '<div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Detail Alfa per Mata Pelajaran</div>'
+      + detailMapel + '</div>'
+    : '';
+
+  if (el) el.innerHTML =
+    '<div style="text-align:center;padding:16px 0 8px">'
+    + '<div style="font-size:44px">'+icon+'</div>'
+    + '<div style="font-size:22px;font-weight:800;color:'+w+';margin-top:6px">'+status+'</div>'
+    + '<div style="font-size:13px;color:var(--text2);margin-top:6px">Total Alfa: <strong style="color:'+w+'">'+A+'x</strong> · Kehadiran: <strong>'+pct+'%</strong></div>'
+    + '</div>'
+    + '<div style="background:'+w+'15;border-radius:10px;padding:12px;font-size:12px;color:'+w+';font-weight:600;text-align:center;margin-bottom:4px">'
+    + (A>=5 ? '⚠️ Segera hubungi wali kelas' : A>=3 ? '📢 Kehadiran perlu ditingkatkan' : '✅ Kehadiran dalam kondisi baik')
+    + '</div>'
+    + detailBlock;
 }
 
 function ortuGantiPassword() {
