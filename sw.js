@@ -29,6 +29,7 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   if (e.request.url.includes('supabase.co')) return;
+  if (e.request.url.includes('onesignal.com')) return;
 
   const url = new URL(e.request.url);
   const isMainDocument = e.request.mode === 'navigate'
