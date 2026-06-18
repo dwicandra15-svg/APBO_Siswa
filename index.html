@@ -802,6 +802,7 @@ tbody tr:last-child td{border-bottom:none}
             <span id="consentSlider" style="position:absolute;cursor:pointer;inset:0;background:#cbd5e1;border-radius:26px;transition:.3s"></span>
           </label>
         </div>
+        <button id="testLokasiBtn" onclick="testCaptureLokasiOrtu()" style="width:100%;margin-top:12px;padding:10px;border:1.5px dashed #94a3b8;border-radius:10px;background:transparent;color:#64748b;font-size:12px;font-weight:700;cursor:pointer">🧪 Test Ambil Lokasi Sekarang (untuk debug)</button>
       </div>
       <div class="card" style="padding:16px">
         <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:12px">🕓 Riwayat Lokasi Terakhir</div>
@@ -2512,6 +2513,45 @@ async function toggleTrackingConsent(checked) {
       ? '✅ Aktif — disetujui sejak ' + new Date().toLocaleDateString('id-ID')
       : 'Belum diaktifkan';
   }
+}
+
+// ══════════════════════════════════════════════
+//  TOMBOL TEST DEBUG — Ambil lokasi langsung tanpa
+//  perlu klik notifikasi (sengaja skip cek consent
+//  agar bisa isolasi apakah GPS browser/device-nya
+//  yang bermasalah). HAPUS tombol ini setelah selesai
+//  debugging fitur tracking.
+// ══════════════════════════════════════════════
+async function testCaptureLokasiOrtu() {
+  const s = _ortuSession?.siswa;
+  if (!s) { toast('Sesi siswa tidak ditemukan, login ulang sebagai ortu', true); return; }
+  if (!navigator.geolocation) { toast('Browser ini tidak mendukung Geolocation API', true); return; }
+
+  const btn = document.getElementById('testLokasiBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Menunggu izin GPS...'; }
+
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    if (btn) { btn.textContent = '💾 Menyimpan...'; }
+    const { error } = await db.from('lokasi_siswa').insert({
+      siswa_id: s.id,
+      nisn: s.nis,
+      nama_siswa: s.nama,
+      kelas_id: s.kelas_id,
+      latitude: pos.coords.latitude,
+      longitude: pos.coords.longitude,
+      akurasi: pos.coords.accuracy
+    });
+    if (btn) { btn.disabled = false; btn.textContent = '🧪 Test Ambil Lokasi Sekarang (untuk debug)'; }
+    if (error) { toast('GPS berhasil tapi gagal simpan ke DB: ' + error.message, true); return; }
+    toast('✅ Lokasi berhasil diambil & disimpan!', false);
+    try { ortuLoadLokasi(); } catch(e) {}
+  }, (err) => {
+    if (btn) { btn.disabled = false; btn.textContent = '🧪 Test Ambil Lokasi Sekarang (untuk debug)'; }
+    let msg = err.message;
+    if (err.code === 1) msg = 'Izin lokasi ditolak — cek setting izin browser/HP untuk situs ini';
+    if (err.code === 3) msg = 'Timeout — GPS tidak merespon dalam 10 detik';
+    toast('❌ Gagal ambil lokasi: ' + msg, true);
+  }, { enableHighAccuracy: true, timeout: 10000 });
 }
 
 function ortuGantiPassword() {
