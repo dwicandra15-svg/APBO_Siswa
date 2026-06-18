@@ -949,7 +949,7 @@ async function initOneSignalSiswa() {
     await OneSignal.init({
       appId: ONESIGNAL_APP_ID,
       allowLocalhostAsSecureOrigin: true,
-      serviceWorkerPath: '/sw.js',
+      serviceWorkerPath: '/OneSignalSDKWorker.js',
     });
     _oneSignalReady = true;
 
