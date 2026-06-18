@@ -1,7 +1,9 @@
 // APBO Siswa Service Worker
-const CACHE_NAME = 'apbosiswa-v1';
-const RUNTIME_CACHE = 'apbosiswa-runtime-v1';
-const SHELL_ASSETS = ['/', '/index.html', '/manifest.json'];
+const CACHE_NAME = 'apbosiswa-v2';
+const RUNTIME_CACHE = 'apbosiswa-runtime-v2';
+// index.html & '/' SENGAJA tidak di-precache di sini —
+// supaya halaman utama selalu network-first (lihat fetch handler di bawah)
+const SHELL_ASSETS = ['/manifest.json'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -22,6 +24,29 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   if (e.request.url.includes('supabase.co')) return;
+
+  const url = new URL(e.request.url);
+  const isMainDocument = e.request.mode === 'navigate'
+    || url.pathname === '/' || url.pathname.endsWith('/index.html');
+
+  // NETWORK-FIRST untuk halaman utama (HTML) — update selalu langsung kepakai.
+  // Cache cuma dipakai sebagai fallback kalau benar-benar offline.
+  if (isMainDocument) {
+    e.respondWith(
+      fetch(e.request)
+        .then(res => {
+          if (res && res.status === 200) {
+            const clone = res.clone();
+            caches.open(RUNTIME_CACHE).then(c => c.put(e.request, clone));
+          }
+          return res;
+        })
+        .catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // STALE-WHILE-REVALIDATE untuk asset lain (CSS/JS/gambar/dll) — tetap cepat.
   e.respondWith(
     caches.match(e.request).then(cached => {
       const fetchPromise = fetch(e.request).then(res => {
