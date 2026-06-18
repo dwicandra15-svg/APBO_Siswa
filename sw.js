@@ -1,4 +1,9 @@
 // APBO Siswa Service Worker
+// Digabung dengan OneSignal SW agar tidak konflik scope (lihat dokumentasi
+// OneSignal "Integrating Multiple Service Workers"). Baris importScripts di
+// bawah WAJIB ada di baris paling atas file ini.
+importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
+
 const CACHE_NAME = 'apbosiswa-v2';
 const RUNTIME_CACHE = 'apbosiswa-runtime-v2';
 // index.html & '/' SENGAJA tidak di-precache di sini —
