@@ -957,17 +957,7 @@ async function initOneSignalSiswa() {
     // (TIDAK pakai OneSignal.login() — hyper-api menarget lewat tag
     // siswa_id/kelas_id, bukan external_id, dan login() sempat 409
     // saat siswa_id sama sudah pernah ter-link ke subscription lama)
-    try {
-      await OneSignal.User.addTags({
-        siswa_id: String(SISWA.id),
-        nisn: String(SISWA.nis || ''),
-        kelas_id: String(SISWA.kelas_id || ''),
-        nama: SISWA.nama || ''
-      });
-      console.log('[OneSignal] Tags berhasil di-set:', SISWA.nama);
-    } catch(tagErr) {
-      console.warn('[OneSignal] addTags gagal:', tagErr);
-    }
+    await setTagsSiswaOneSignal();
 
     // Minta izin notifikasi (akan muncul popup browser)
     const permission = OneSignal.Notifications.permission;
@@ -1003,10 +993,30 @@ function showNotifPermissionBanner() {
   document.body.appendChild(banner);
 }
 
+async function setTagsSiswaOneSignal() {
+  if (!SISWA) return;
+  try {
+    await OneSignal.User.addTags({
+      siswa_id: String(SISWA.id),
+      nisn: String(SISWA.nis || ''),
+      kelas_id: String(SISWA.kelas_id || ''),
+      nama: SISWA.nama || ''
+    });
+    console.log('[OneSignal] Tags berhasil di-set:', SISWA.nama);
+  } catch(tagErr) {
+    console.warn('[OneSignal] addTags gagal:', tagErr);
+  }
+}
+
 async function aktifkanNotifSiswa() {
   try {
     await OneSignal.Notifications.requestPermission();
     document.getElementById('notifPermBanner')?.remove();
+    // Set tags LAGI setelah izin diberikan — subscription baru
+    // benar-benar aktif di server OneSignal di titik ini, jadi
+    // tag yang di-set sebelum izin (di initOneSignalSiswa) bisa
+    // saja tidak tersimpan karena belum ada subscription nyata.
+    await setTagsSiswaOneSignal();
   } catch(e) {
     console.warn('Gagal minta izin notifikasi:', e);
   }
