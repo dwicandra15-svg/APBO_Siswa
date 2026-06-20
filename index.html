@@ -953,16 +953,21 @@ async function initOneSignalSiswa() {
     });
     _oneSignalReady = true;
 
-    // Set external_id agar OneSignal tahu ini siswa siapa
-    await OneSignal.login(String(SISWA.id));
-
-    // Tag data siswa untuk filter saat kirim notif per kelas
-    await OneSignal.User.addTags({
-      siswa_id: String(SISWA.id),
-      nisn: String(SISWA.nis || ''),
-      kelas_id: String(SISWA.kelas_id || ''),
-      nama: SISWA.nama || ''
-    });
+    // Tag data siswa untuk filter saat kirim notif per kelas.
+    // (TIDAK pakai OneSignal.login() — hyper-api menarget lewat tag
+    // siswa_id/kelas_id, bukan external_id, dan login() sempat 409
+    // saat siswa_id sama sudah pernah ter-link ke subscription lama)
+    try {
+      await OneSignal.User.addTags({
+        siswa_id: String(SISWA.id),
+        nisn: String(SISWA.nis || ''),
+        kelas_id: String(SISWA.kelas_id || ''),
+        nama: SISWA.nama || ''
+      });
+      console.log('[OneSignal] Tags berhasil di-set:', SISWA.nama);
+    } catch(tagErr) {
+      console.warn('[OneSignal] addTags gagal:', tagErr);
+    }
 
     // Minta izin notifikasi (akan muncul popup browser)
     const permission = OneSignal.Notifications.permission;
