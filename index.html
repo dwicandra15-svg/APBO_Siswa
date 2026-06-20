@@ -993,7 +993,7 @@ function showNotifPermissionBanner() {
   document.body.appendChild(banner);
 }
 
-async function setTagsSiswaOneSignal() {
+async function setTagsSiswaOneSignal(_isRetry = false) {
   if (!SISWA) return;
   try {
     await OneSignal.User.addTags({
@@ -1005,6 +1005,12 @@ async function setTagsSiswaOneSignal() {
     console.log('[OneSignal] Tags berhasil di-set:', SISWA.nama);
   } catch(tagErr) {
     console.warn('[OneSignal] addTags gagal:', tagErr);
+    // Known OneSignal SDK quirk: 409 sering terjadi di percobaan
+    // PERTAMA setelah cache/site-data di-clear (ID lokal belum
+    // sinkron dgn server). Retry sekali setelah jeda biasanya beres.
+    if (!_isRetry) {
+      setTimeout(() => setTagsSiswaOneSignal(true), 4000);
+    }
   }
 }
 
